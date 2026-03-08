@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # App
     app_name: str = "HunterViz"
     debug: bool = False
+    port: int = 8000  # Server port (use 8080 or another if 8000 gives WinError 10013 on Windows)
 
     # Auth
     secret_key: str = "change-me-in-production"
@@ -37,7 +38,7 @@ class Settings(BaseSettings):
     stripe_price_id: Optional[str] = None
 
     # Dashboard URL (provided later)
-    dashboard_url: str = "https://dashboard.hunterviz.com"
+    dashboard_url: str = "https://dashboard.example.com"
 
     def ensure_data_dirs(self) -> None:
         Path(self.user_store_path).parent.mkdir(parents=True, exist_ok=True)

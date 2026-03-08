@@ -1,6 +1,6 @@
-# Web App Architecture: Business Display, Auth & Subscriptions (Python + Stripe)
+# Web App Architecture: Auth & Subscriptions (Python + Stripe)
 
-This document describes an industry-standard architecture for a Python web application that handles **business display**, **user authentication**, and **subscription handling** using **Stripe** for payments and subscriptions.
+This document describes an industry-standard architecture for a Python web application that handles **user authentication** and **subscription handling** using **Stripe** for payments and subscriptions. Each feature owns its own **display**: HTML and UI for that feature live in a **view** folder inside the feature.
 
 ---
 
@@ -17,7 +17,7 @@ Use a **layered architecture** with clear boundaries so each layer has a single 
 │  - Request validation, auth middleware, response formatting      │
 ├─────────────────────────────────────────────────────────────────┤
 │  Application / Service Layer                                     │
-│  - Use cases: auth, subscription, business display               │
+│  - Use cases: auth, subscription, and feature-specific display   │
 │  - Orchestrates domain logic and external services (Stripe)      │
 ├─────────────────────────────────────────────────────────────────┤
 │  Domain Layer                                                    │
@@ -59,9 +59,9 @@ The codebase is organized by **features**, with a shared **core**. Layers (prese
 | Rule | Description |
 |------|-------------|
 | **Core** | Holds shared code used by more than one feature: config, logging, auth interfaces, shared domain types, and shared infrastructure (e.g. file storage abstraction). No business logic that belongs to a single feature. |
-| **Features** | Each feature is a vertical slice: its own API routes, use cases, domain entities, and infrastructure (repositories, Stripe client usage). One feature = one bounded context (e.g. auth, subscriptions, business_display). |
+| **Features** | Each feature is a vertical slice: its own API routes, **view** folder (HTML/templates for that feature), use cases, domain entities, and infrastructure. One feature = one bounded context (e.g. auth, subscriptions). There is no separate "business display" feature—each feature owns its own display files. |
 | **Dependencies** | Features may depend on **core**. Features should **not** depend on other features; if two features need to collaborate, either move the shared part to core or expose a small interface in core that one feature implements and the other consumes. |
-| **Layers inside each** | Both `core/` and each folder under `features/` keep the same layer names: `api/`, `application/`, `domain/`, `infrastructure/`. This keeps the dependency rule (inner layers don’t depend on outer) consistent everywhere. |
+| **Layers inside each** | Both `core/` and each folder under `features/` keep the same layer names: `api/`, `application/`, `domain/`, `infrastructure/`, plus a **view/** folder for that feature's HTML. This keeps the dependency rule (inner layers don’t depend on outer) consistent everywhere. |
 
 ### 3.2 Directory Layout
 
@@ -107,9 +107,13 @@ web-server/
 │   │   │   ├── domain/
 │   │   │   │   ├── __init__.py
 │   │   │   │   └── user.py         # User entity, roles
-│   │   │   └── infrastructure/
-│   │   │       ├── __init__.py
-│   │   │       └── user_store.py   # Implements UserRepository (e.g. JSON file)
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── user_store.py   # Implements UserRepository (e.g. JSON file)
+│   │   │   └── view/               # HTML/templates for this feature
+│   │   │       ├── login.html
+│   │   │       ├── signup.html
+│   │   │       └── ...
 │   │   │
 │   │   ├── subscriptions/
 │   │   │   ├── __init__.py
@@ -122,25 +126,15 @@ web-server/
 │   │   │   ├── domain/
 │   │   │   │   ├── __init__.py
 │   │   │   │   └── subscription.py # Subscription, Plan, status
-│   │   │   └── infrastructure/
-│   │   │       ├── __init__.py
-│   │   │       ├── stripe_client.py
-│   │   │       └── subscription_store.py  # e.g. JSON or same file as users
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── stripe_client.py
+│   │   │   │   └── subscription_store.py  # e.g. JSON or same file as users
+│   │   │   └── view/               # HTML/templates for this feature
+│   │   │       ├── checkout.html
+│   │   │       ├── billing.html
+│   │   │       └── ...
 │   │   │
-│   │   └── business_display/
-│   │       ├── __init__.py
-│   │       ├── api/
-│   │       │   ├── __init__.py
-│   │       │   └── routes.py       # Public pages, dashboard (protected)
-│   │       ├── application/
-│   │       │   ├── __init__.py
-│   │       │   └── business_service.py
-│   │       ├── domain/
-│   │       │   ├── __init__.py
-│   │       │   └── business.py
-│   │       └── infrastructure/
-│   │           └── __init__.py     # Optional: e.g. static content
-│   │
 │   └── shared_schemas/            # Optional: Pydantic request/response models shared by API
 │       └── __init__.py
 │
@@ -149,8 +143,7 @@ web-server/
 │   │   ├── core/
 │   │   └── features/
 │   │       ├── auth/
-│   │       ├── subscriptions/
-│   │       └── business_display/
+│   │       └── subscriptions/
 │   ├── integration/
 │   └── e2e/
 │
@@ -251,11 +244,13 @@ web-server/
 
 ---
 
-## 6. Business Display
+## 6. Per-Feature Display (View Folder)
 
-- **Public**: Marketing/landing pages, pricing, feature list. Can be static or server-rendered; no auth required.
-- **Authenticated**: Dashboard, account, billing (links to Stripe Checkout/Portal), usage or feature access based on plan.
-- **Separation**: Use route groups or modules (e.g. `api/v1/business.py` for public, `api/v1/dashboard.py` or `users.py` for authenticated). Middleware/dependencies enforce “public” vs “authenticated” vs “subscribed.”
+Each feature owns its own display. HTML and templates for a feature live in that feature's **view/** folder (e.g. `features/auth/view/`, `features/subscriptions/view/`).
+
+- **Public pages**: Marketing/landing, pricing, feature list—can live in a feature that owns "marketing" or in a dedicated feature with its own view folder. No auth required.
+- **Authenticated pages**: Dashboard, account, billing (links to Stripe Checkout/Portal), usage or feature access—each served by the feature that owns that behavior, from its own **view/** folder.
+- **Separation**: Use route groups or modules per feature; each feature’s API routes serve both JSON and server-rendered pages from its **view/** folder. Middleware/dependencies enforce “public” vs “authenticated” vs “subscribed.”
 
 ---
 
@@ -414,7 +409,7 @@ Static site: “Sign in” and “Sign up” should link to **`/app`** or **`/ap
 
 ## 10. Scalability and Operations
 
-- **User / subscription store**: With JSON-file storage (Cloud Run, no Cloud SQL), use a **persistent volume** and **single instance** or **atomic writes**; for multi-instance scaling, prefer Firestore or another serverless datastore. With a SQL DB: use connection pooling (e.g. SQLAlchemy pool); consider read replicas for read-heavy “business display” and reporting.
+- **User / subscription store**: With JSON-file storage (Cloud Run, no Cloud SQL), use a **persistent volume** and **single instance** or **atomic writes**; for multi-instance scaling, prefer Firestore or another serverless datastore. With a SQL DB: use connection pooling (e.g. SQLAlchemy pool); consider read replicas for read-heavy pages and reporting.
 - **Stripe**: Use **idempotency keys** for Create operations (Checkout Session, Customer, etc.) when retrying.
 - **Caching**: Optional cache (e.g. Redis) for session or “current plan” to reduce DB load.
 - **Logging**: Structured logs (JSON) with request ID; no sensitive data (no tokens, full card numbers).
@@ -433,24 +428,25 @@ Static site: “Sign in” and “Sign up” should link to **`/app`** or **`/ap
                            ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                     Python Web Application                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐   │
-│  │ Auth API    │  │ Subs API    │  │ Business Display API    │   │
-│  │ (login,     │  │ (checkout,  │  │ (public + dashboard)   │   │
-│  │  register)  │  │  portal,    │  │                         │   │
-│  │             │  │  webhook)   │  │                         │   │
-│  └──────┬──────┘  └──────┬──────┘  └────────────┬────────────┘   │
-│         │                │                      │                 │
-│         ▼                ▼                      ▼                 │
+│  ┌─────────────┐  ┌─────────────┐                                │
+│  │ Auth API    │  │ Subs API    │  (each feature has api/ + view/)│
+│  │ + view/     │  │ + view/     │                                │
+│  │ (login,     │  │ (checkout,  │                                │
+│  │  register,  │  │  portal,    │                                │
+│  │  pages)     │  │  webhook,   │                                │
+│  └──────┬──────┘  └──────┬──────┘                                │
+│         │                │                                         │
+│         ▼                ▼                                         │
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │              Application / Service Layer                      ││
-│  │  (auth, subscription, business use cases)                     ││
+│  │  (auth, subscription use cases; each feature owns its display) ││
 │  └──────┬────────────────────┬────────────────────┬────────────┘│
-│         │                    │                    │               │
-│         ▼                    ▼                    ▼               │
-│  ┌────────────┐     ┌───────────────┐     ┌──────────────┐       │
-│  │   User     │     │   Stripe      │     │  Repository  │       │
-│  │ Repository │     │   Client      │     │  (subscription)       │
-│  └──────┬─────┘     └───────┬───────┘     └──────┬───────┘       │
+│         │                    │                                       │
+│         ▼                    ▼                                       │
+│  ┌────────────┐     ┌───────────────┐     ┌──────────────┐          │
+│  │   User     │     │   Stripe      │     │  Repository  │          │
+│  │ Repository │     │   Client      │     │ (subscription)│          │
+│  └──────┬─────┘     └───────┬───────┘     └──────┬───────┘          │
 │         │                   │                    │                │
 └─────────┼───────────────────┼────────────────────┼────────────────┘
           │                   │                    │
@@ -470,4 +466,4 @@ Static site: “Sign in” and “Sign up” should link to **`/app`** or **`/ap
 
 ---
 
-This architecture gives you a clear separation of concerns, secure auth, reliable subscription state via Stripe and webhooks, and a scalable structure for adding more features later. Implement incrementally: auth first, then Stripe Checkout and webhooks, then Customer Portal and business display.
+This architecture gives you a clear separation of concerns, secure auth, reliable subscription state via Stripe and webhooks, and a scalable structure for adding more features later. Implement incrementally: auth first (including its view/ pages), then Stripe Checkout and webhooks, then Customer Portal and each feature's view/ as needed.

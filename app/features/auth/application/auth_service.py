@@ -11,13 +11,21 @@ from app.core.application.ports import UserRepository
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+BCRYPT_MAX_PASSWORD_BYTES = 72
+
+
+def _truncate_password_bytes(password: str) -> bytes:
+    """Bcrypt limits input to 72 bytes; truncate to avoid ValueError from bcrypt 5.x."""
+    encoded = password.encode("utf-8")
+    return encoded[:BCRYPT_MAX_PASSWORD_BYTES]
+
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return pwd_context.hash(_truncate_password_bytes(password))
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return pwd_context.verify(_truncate_password_bytes(plain), hashed)
 
 
 def create_access_token(user_id: str, secret_key: str, expire_minutes: int = 15) -> str:

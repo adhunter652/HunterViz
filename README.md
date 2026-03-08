@@ -1,16 +1,20 @@
 # HunterViz Web Server
 
-Web app for HunterViz: static landing, sign-in/sign-up, user landing, and subscribe page. Built to the architecture in `docs/ARCHITECTURE.md`.
+Web app: professional landing page, sign-in/sign-up, user landing, and subscribe page. Built to the architecture in `docs/ARCHITECTURE.md`. Logo and company name image live in `static/assets/`. Set `APP_NAME` in `.env` to customize the business name.
 
 ## Quick start
 
 ```bash
 pip install -r requirements.txt
 cp .env.example .env   # edit SECRET_KEY and DASHBOARD_URL as needed
-python -m uvicorn app.main:app --reload
+python run.py
 ```
 
-- **Landing**: http://127.0.0.1:8000/ — HunterViz, “Contact me” button, Sign in / Sign up (top right).
+Or: `python -m uvicorn app.main:app --reload` (default port 8000).
+
+**Windows:** If you see `[WinError 10013] ... access permissions`, port 8000 is blocked. Use a different port: set `PORT=8080` in `.env` and run `python run.py`, or run `python -m uvicorn app.main:app --reload --port 8080` and open http://127.0.0.1:8080/
+
+- **Landing**: http://127.0.0.1:8000/ (or the port you set) — HunterViz logo and company name (from assets), hero, “Contact us”, Sign in / Sign up (header).
 - **Sign in**: http://127.0.0.1:8000/app/login — redirects to user landing after login.
 - **Sign up**: http://127.0.0.1:8000/app/signup — after register, redirects to subscribe page.
 - **User landing**: http://127.0.0.1:8000/app — company name, dashboard thumbnail; if not subscribed, large warning and “Go to Subscribe”.

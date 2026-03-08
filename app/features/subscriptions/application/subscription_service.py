@@ -1,4 +1,4 @@
-"""Check subscription status; used by business_display and subscribe page."""
+"""Check subscription status; used by subscribe page and user landing."""
 from typing import Optional
 
 from app.core.application.ports import SubscriptionRepository
