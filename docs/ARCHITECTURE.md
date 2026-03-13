@@ -322,76 +322,43 @@ To avoid Cloud Run starting (and incurring cost or cold starts) when someone sim
 
 ### 8.1 Chosen approach: Same domain with Firebase Hosting rewrites
 
-- **Static**: `https://yourapp.com/`, `/pricing`, `/about`, etc. → Firebase Hosting (static files). No Cloud Run.
-- **App**: `https://yourapp.com/app` and `https://yourapp.com/app/*` → rewritten to Cloud Run (login, signup, dashboard).
-- **API**: `https://yourapp.com/api/*` → rewritten to Cloud Run (auth, subscriptions, webhooks).
-- **Sign in / Sign up**: Buttons link to `https://yourapp.com/app` (or `/app/login`, `/app/signup`). First request to that path hits Cloud Run and starts the service.
-- **CORS**: Not needed for same-origin; all requests are to `yourapp.com`. Cookies work on the same domain.
+- **Static**: `https://hunterviz.com/`, `/pricing`, `/about`, etc. → static hosting (e.g. Firebase Hosting). No Cloud Run.
+- **App**: `https://app.hunterviz.com` and `https://app.hunterviz.com/app/*` → Cloud Run (login, signup, dashboard). This domain triggers the application.
+- **API**: `https://app.hunterviz.com/api/*` → Cloud Run (auth, subscriptions, webhooks).
+- **Sign in / Sign up**: On the static site (hunterviz.com), buttons link to `https://app.hunterviz.com/app/login` and `https://app.hunterviz.com/app/signup`. That navigation starts the Cloud Run service.
+- **CORS**: Configure for `https://hunterviz.com` if the static site makes API calls to app.hunterviz.com; cookies are scoped to app.hunterviz.com.
 
 ### 8.2 Flow
 
-1. **User visits** `https://yourapp.com` → Firebase Hosting serves the static landing page. No Cloud Run.
-2. **User browses** `/pricing`, `/about` → static files from Firebase. Still no Cloud Run.
-3. **User clicks “Sign in” or “Sign up”** → navigates to `https://yourapp.com/app` (or `/app/login`). Firebase rewrites that path to Cloud Run; first request **starts** the Cloud Run service (cold start if scaled to zero).
-4. After that, all `/app/*` and `/api/*` traffic goes to Cloud Run until the user leaves.
+1. **User visits** `https://hunterviz.com` → static landing page. No Cloud Run.
+2. **User browses** `/pricing`, `/about` → static files. Still no Cloud Run.
+3. **User clicks “Sign in” or “Sign up”** → navigates to `https://app.hunterviz.com/app/login` (or `/app/signup`). First request to app.hunterviz.com **starts** the Cloud Run service (cold start if scaled to zero).
+4. All app and API traffic stays on app.hunterviz.com until the user leaves.
 
-So: **Firebase Hosting = static site, always-on, free, no cold start**. **Cloud Run = only when the user enters the app (sign in / sign up or app paths).**
+So: **hunterviz.com = static site, always-on, no cold start**. **app.hunterviz.com = Cloud Run, only when the user clicks Sign in / Sign up or hits app paths.**
 
-### 8.3 Firebase Hosting configuration
+### 8.3 Static site and app domain
 
-Use **Firebase Hosting** as the static host (same GCP project as Cloud Run). Configure rewrites so only `/app` and `/api` are proxied to your Cloud Run service; everything else is served as static files.
+**Static site (hunterviz.com)** is hosted separately (e.g. Firebase Hosting or any static host). It does **not** rewrite to Cloud Run; instead, “Sign in”, “Sign up”, and “Contact us” link to **`https://app.hunterviz.com/app/login`**, **`https://app.hunterviz.com/app/signup`**, and **`https://app.hunterviz.com/app/contact`**. That domain (app.hunterviz.com) is mapped to your Cloud Run service (e.g. via Cloud Run custom domain or a load balancer).
 
-Example **`firebase.json`** (in the project that deploys the static site):
-
-```json
-{
-  "hosting": {
-    "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      {
-        "source": "/app/**",
-        "run": {
-          "serviceId": "your-cloud-run-service-id",
-          "region": "us-central1"
-        }
-      },
-      {
-        "source": "/api/**",
-        "run": {
-          "serviceId": "your-cloud-run-service-id",
-          "region": "us-central1"
-        }
-      }
-    ]
-  }
-}
-```
-
-- **`public`**: Directory containing your static build (e.g. `dist` from your frontend build). Served for `/`, `/pricing`, `/about`, and any path that does not match a rewrite.
-- **`rewrites`**: Requests to `/app/**` and `/api/**` are sent to the Cloud Run service. Replace `your-cloud-run-service-id` and `region` with your actual Cloud Run service ID and region.
-- **Linking Cloud Run**: In Firebase (and optionally in the same repo), ensure the Hosting rewrites point to the deployed Cloud Run service. You can deploy Hosting and Cloud Run separately; Hosting only needs the service ID and region to proxy.
-
-Static site: “Sign in” and “Sign up” should link to **`/app`** or **`/app/login`** and **`/app/signup`** so the first navigation triggers the rewrite and starts Cloud Run.
-
-**Cloud Run path handling**: Requests rewritten from Firebase arrive at Cloud Run with the same path (e.g. `/app/login`, `/api/v1/auth/login`). Your app should mount routes under `/app` and `/api` (e.g. in `main.py`) so these paths are handled correctly.
+**Cloud Run** serves the app at app.hunterviz.com. Mount routes under `/app` and `/api` (e.g. in `main.py`) so paths like `/app/login` and `/api/v1/auth/login` are handled correctly.
 
 ### 8.4 What to Put Where
 
 | Content | Served by | Reason |
 |--------|-----------|--------|
-| Landing, marketing, pricing, “Sign in” / “Sign up” **buttons** | Firebase Hosting (static) | No Cloud Run; free; no cold start. |
-| `/app`, `/app/login`, `/app/signup`, dashboard, billing | Cloud Run (via rewrite) | First request to `/app` starts Cloud Run. |
-| Auth API (`/api/v1/auth/login`, etc.) | Cloud Run (via `/api` rewrite) | Backend only. |
-| Stripe webhooks | Cloud Run (e.g. `/api/v1/webhooks/stripe`) | Backend only. |
+| Landing, marketing, pricing, “Sign in” / “Sign up” **buttons** | hunterviz.com (static) | No Cloud Run; no cold start. |
+| `/app`, `/app/login`, `/app/signup`, dashboard, billing | app.hunterviz.com (Cloud Run) | First request to app.hunterviz.com starts Cloud Run. |
+| Auth API (`/api/v1/auth/login`, etc.) | app.hunterviz.com (Cloud Run) | Backend only. |
+| Stripe webhooks | app.hunterviz.com (e.g. `/api/v1/webhooks/stripe`) | Backend only. |
 
-“Sign in” / “Sign up” on the static site link to **`/app`** or **`/app/login`** so the user is sent through the rewrite to Cloud Run; that first request starts the service.
+“Sign in” / “Sign up” on hunterviz.com link to **`https://app.hunterviz.com/app/login`** and **`https://app.hunterviz.com/app/signup`** so the user goes to the app domain and starts the service.
 
 ### 8.5 Summary
 
-- **Firebase Hosting** serves the static site on the **same domain**; hitting the main URL or static paths does **not** start Cloud Run.
-- **Rewrites** send only **`/app/**`** and **`/api/**`** to Cloud Run. “Sign in” / “Sign up” point to `/app` (or `/app/login`, `/app/signup`).
-- **Cloud Run** starts only when the user clicks Sign in / Sign up (or otherwise hits `/app` or `/api`). Same domain means no CORS and straightforward cookies.
+- **hunterviz.com** serves the static site; hitting it does **not** start Cloud Run.
+- **app.hunterviz.com** is mapped to Cloud Run. “Sign in” / “Sign up” on the static site point to `https://app.hunterviz.com/app/login` and `https://app.hunterviz.com/app/signup`.
+- **Cloud Run** starts only when the user visits app.hunterviz.com (e.g. by clicking Sign in / Sign up).
 
 ---
 

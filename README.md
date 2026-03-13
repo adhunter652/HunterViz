@@ -26,6 +26,9 @@ Or: `python -m uvicorn app.main:app --reload` (default port 8000).
 - `SECRET_KEY`: Set a strong value in production.
 - `USER_STORE_PATH` / `SUBSCRIPTION_STORE_PATH`: JSON files for users and subscriptions (default `data/`).
 
-## Firebase Hosting + Cloud Run
+## Production URLs
 
-Use `firebase.json` to serve the static site from Firebase and rewrite `/app` and `/api` to your Cloud Run service. Replace `your-cloud-run-service-id` and `region` with your deployed service. Sign in / Sign up links use `/app/login` and `/app/signup` (same domain when using rewrites).
+- **Static site**: **hunterviz.com** — landing and marketing (no app server).
+- **App**: **app.hunterviz.com** — Sign in, Sign up, dashboard, subscribe, contact; this domain triggers the Cloud Run application.
+
+On the static site (hunterviz.com), Sign in / Sign up / Contact us link to `https://app.hunterviz.com/app/login`, `https://app.hunterviz.com/app/signup`, and `https://app.hunterviz.com/app/contact`. Map app.hunterviz.com to your Cloud Run service (see `docs/GOOGLE_CLOUD_SETUP.md`).

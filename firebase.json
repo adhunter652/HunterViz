@@ -1,22 +1,6 @@
 {
   "hosting": {
     "public": "static",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      {
-        "source": "/app/**",
-        "run": {
-          "serviceId": "your-cloud-run-service-id",
-          "region": "us-central1"
-        }
-      },
-      {
-        "source": "/api/**",
-        "run": {
-          "serviceId": "your-cloud-run-service-id",
-          "region": "us-central1"
-        }
-      }
-    ]
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
   }
 }

@@ -2,7 +2,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.api.middleware import setup_middleware
@@ -48,3 +48,12 @@ if static_dir.exists():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# Unsupported URLs: redirect to static site (must be last so it only matches when no route does)
+STATIC_SITE_URL = "https://hunterviz.com"
+
+
+@app.get("/{full_path:path}")
+def redirect_unsupported_to_static_site(full_path: str):
+    return RedirectResponse(url=STATIC_SITE_URL, status_code=302)

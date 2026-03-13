@@ -29,8 +29,8 @@ class Settings(BaseSettings):
     # Subscription store
     subscription_store_path: str = "data/subscriptions.json"
 
-    # Cloud Run / external URLs (for redirects from static site)
-    cloud_run_url: str = ""  # e.g. https://your-service-xxx.run.app
+    # App server URL (static site hunterviz.com links here for Sign in / Sign up / Contact)
+    cloud_run_url: str = "https://app.hunterviz.com"
 
     # Stripe (optional for subscribe page)
     stripe_secret_key: Optional[str] = None

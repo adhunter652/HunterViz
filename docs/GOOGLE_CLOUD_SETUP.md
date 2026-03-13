@@ -61,13 +61,13 @@ gcloud run deploy hunterviz-web \
   --max-instances 10 \
   --set-env-vars "PORT=8080" \
   --set-env-vars "SECRET_KEY=your-secret-key-here" \
-  --set-env-vars "CLOUD_RUN_URL=https://hunterviz-web-XXXXX-uc.a.run.app"
+  --set-env-vars "CLOUD_RUN_URL=https://app.hunterviz.com"
 ```
 
 Replace:
 
 - `REGION` (e.g. `us-central1`), `REPO_NAME`, `IMAGE_NAME`, `TAG` with the image built by Cloud Build.
-- `CLOUD_RUN_URL` with the actual Cloud Run URL after the first deploy (you can update and redeploy).
+- `CLOUD_RUN_URL` to `https://app.hunterviz.com` (or your custom domain that points to this Cloud Run service).
 
 **Min instances = 0** so the service starts only when a user hits one of the three app routes.
 
@@ -79,7 +79,7 @@ Set these (via `--set-env-vars` or the Cloud Run UI) from [app/core/config.py](.
 |----------|----------|--------|
 | `PORT` | Yes | Set to `8080` (Cloud Run default). |
 | `SECRET_KEY` | Yes | Use a strong secret in production. |
-| `CLOUD_RUN_URL` | Yes | Full URL of this service (e.g. `https://hunterviz-web-xxxxx-uc.a.run.app`) for redirects. |
+| `CLOUD_RUN_URL` | Yes | App server URL (e.g. `https://app.hunterviz.com`) for redirects. Map this domain to your Cloud Run service. |
 | `CONTACT_EMAIL` | Optional | Default in code. |
 | `CONTACT_PHONE` | Optional | Default in code. |
 | `SMTP_*` | Optional | If you want contact form submissions emailed. |
@@ -93,11 +93,11 @@ The service wakes on the first request to any of:
 - **`/app/signup`**
 - **`/app/contact`**
 
-The **landing page is hosted elsewhere**. On that 3rd-party site, point the three buttons (Sign in, Sign up, Contact us) to:
+The **landing page is on hunterviz.com** (static). Point the three buttons (Sign in, Sign up, Contact us) to the app subdomain:
 
-- `https://YOUR_CLOUD_RUN_URL/app/login`
-- `https://YOUR_CLOUD_RUN_URL/app/signup`
-- `https://YOUR_CLOUD_RUN_URL/app/contact`
+- `https://app.hunterviz.com/app/login`
+- `https://app.hunterviz.com/app/signup`
+- `https://app.hunterviz.com/app/contact`
 
 ---
 
@@ -153,4 +153,4 @@ Ensure the Cloud Build service account has roles: **Cloud Run Admin**, **Storage
 | Entry routes | Only `/app/login`, `/app/signup`, `/app/contact` cold-start the service. |
 | Trigger | Push to `main` runs `cloudbuild.yaml` → build → push → deploy. |
 
-After the first successful deploy, set **CLOUD_RUN_URL** to the service URL and point your 3rd-party landing page’s three buttons to the URLs in section 3.3.
+After the first successful deploy, map **app.hunterviz.com** to your Cloud Run service (e.g. via Load Balancer or Cloud Run custom domain), set **CLOUD_RUN_URL** to `https://app.hunterviz.com`, and ensure the static site at **hunterviz.com** links to the URLs in section 3.3.
