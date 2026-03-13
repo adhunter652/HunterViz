@@ -1,0 +1,23 @@
+# Exclude from gcloud builds submit context (smaller, no secrets)
+.git
+.gitignore
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.coverage
+htmlcov
+.env
+.env.*
+!.env.example
+docs/
+tests/
+*.md
+!README.md
+data/*.json
+node_modules/
+.cursor
+*.plan.md

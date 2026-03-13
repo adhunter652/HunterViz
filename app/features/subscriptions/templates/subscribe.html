@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscribe — {{ app_name }}</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-tint: rgba(59, 130, 246, 0.15);
+      --border: rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 1rem;
+    }
+    .header {
+      flex-shrink: 0;
+      height: 150px;
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(to bottom, #bfdbfe 0%, var(--bg) 100%);
+      z-index: 100;
+    }
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .logo-wrap .logo-img { height: 32px; width: auto; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+    .logo-wrap .company-name-img { height: 24px; width: auto; display: block; }
+    .nav { display: flex; align-items: center; gap: 0.5rem; }
+    .nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.4rem 0.875rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .nav a:hover { color: var(--text); background: var(--accent-tint); }
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      background: var(--bg);
+    }
+    .module {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2.5rem;
+      text-align: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .brand .company-name-img { height: 24px; width: auto; object-fit: contain; }
+    .module h2 { margin: 0 0 1rem 0; font-size: 1.5rem; font-weight: 600; color: var(--text); }
+    .module .lead { margin: 0 0 1.5rem 0; color: var(--text-muted); font-size: 1.125rem; line-height: 1.5; }
+    .perks {
+      list-style: none;
+      margin: 0 0 1.5rem 0;
+      padding: 0;
+      text-align: left;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .perks li { padding: 0.35rem 0; padding-left: 1.5rem; position: relative; }
+    .perks li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+    .btn-sales {
+      display: inline-block;
+      padding: 0.875rem 1.75rem;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .btn-sales:hover { background: var(--accent-hover); color: #fff; }
+    .back { margin-top: 1.5rem; font-size: 1rem; color: var(--text-muted); }
+    .back a { color: var(--accent); text-decoration: none; }
+    .back a:hover { text-decoration: underline; }
+    .footer {
+      flex-shrink: 0;
+      padding: 0.75rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+      background: linear-gradient(to bottom, var(--bg) 0%, #e2e8f0 100%);
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="/" class="logo-wrap">
+      <img src="/assets/logo.png" alt="" class="logo-img">
+      <img src="/assets/company-name.png" alt="{{ app_name }}" class="company-name-img">
+    </a>
+    <nav class="nav">
+      <a href="/app/login">Sign in</a>
+      <a href="/app">Dashboard</a>
+    </nav>
+  </header>
+  <main>
+    <div class="module">
+      <a href="/" class="brand">
+        <img src="/assets/company-name.png" alt="{{ app_name }}" class="company-name-img">
+      </a>
+      <h2>{{ plan_name }}</h2>
+      <p class="lead">{{ plan_description }}</p>
+      <ul class="perks">
+        <li>Fully customized dashboard for your business</li>
+        <li>Any data source</li>
+        <li>We handle everything, so you can handle your business</li>
+      </ul>
+      {% if contact_sales %}
+      <a href="/app/contact" class="btn-sales">Contact Sales</a>
+      {% endif %}
+      <p class="back"><a href="/app">Back to dashboard</a></p>
+    </div>
+  </main>
+  <footer class="footer">
+    <span>&copy; <span id="year"></span> {{ app_name }}. All rights reserved.</span>
+  </footer>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

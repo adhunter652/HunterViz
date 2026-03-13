@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Sales — {{ app_name }}</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-tint: rgba(59, 130, 246, 0.15);
+      --border: rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 1rem;
+    }
+    .header {
+      flex-shrink: 0;
+      height: 150px;
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(to bottom, #bfdbfe 0%, var(--bg) 100%);
+      z-index: 100;
+    }
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .logo-wrap .logo-img { height: 32px; width: auto; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+    .logo-wrap .company-name-img { height: 24px; width: auto; display: block; }
+    .nav { display: flex; align-items: center; gap: 0.5rem; }
+    .nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.4rem 0.875rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .nav a:hover { color: var(--text); background: var(--accent-tint); }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      background: var(--bg);
+    }
+    .page { width: 100%; max-width: 440px; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      margin-bottom: 2rem;
+    }
+    .back-link:hover { color: var(--accent); text-decoration: underline; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2.5rem;
+    }
+    .card h1 {
+      margin: 0 0 0.35rem 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .card .subtitle {
+      margin: 0 0 2rem 0;
+      color: var(--text-muted);
+      font-size: 1.125rem;
+      line-height: 1.5;
+    }
+    .form { display: flex; flex-direction: column; gap: 1.5rem; }
+    .field { display: flex; flex-direction: column; gap: 0.5rem; }
+    .field label { font-size: 0.875rem; font-weight: 500; color: var(--text); }
+    .field .hint { font-size: 0.8125rem; color: var(--text-muted); font-weight: 400; }
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      font-family: inherit;
+      font-size: 1rem;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field textarea { min-height: 100px; resize: vertical; }
+    .field input::placeholder,
+    .field textarea::placeholder { color: var(--text-muted); }
+    .field input:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    .submit-row { margin-top: 0.5rem; }
+    .btn-submit {
+      display: inline-block;
+      width: 100%;
+      padding: 0.875rem 1.75rem;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.02s;
+    }
+    .btn-submit:hover { background: var(--accent-hover); color: #fff; }
+    .btn-submit:active { transform: scale(0.99); }
+    .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+    .thank-you { display: none; text-align: center; }
+    .thank-you.visible { display: block; }
+    .thank-you h2 { margin: 0 0 0.75rem 0; font-size: 1.5rem; font-weight: 600; color: var(--text); }
+    .thank-you p { margin: 0 0 1.5rem 0; color: var(--text-muted); line-height: 1.5; }
+    .btn-dashboard {
+      display: inline-block;
+      padding: 0.875rem 1.75rem;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn-dashboard:hover { background: var(--accent-hover); color: #fff; }
+    .footer {
+      flex-shrink: 0;
+      padding: 0.75rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+      background: linear-gradient(to bottom, var(--bg) 0%, #e2e8f0 100%);
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="/" class="logo-wrap">
+      <img src="/assets/logo.png" alt="" class="logo-img">
+      <img src="/assets/company-name.png" alt="{{ app_name }}" class="company-name-img">
+    </a>
+    <nav class="nav">
+      <a href="/app/subscribe">Subscribe</a>
+      <a href="/app">Dashboard</a>
+    </nav>
+  </header>
+  <main>
+    <div class="page">
+      <a href="/app/subscribe" class="back-link">← Back to plan</a>
+      <div class="card" id="form-card">
+        <h1>Contact Sales</h1>
+        <p class="subtitle">Tell us a bit about your needs. All fields are optional—we'll follow up either way.</p>
+        <form id="contact-form" class="form">
+          <div class="field">
+            <label for="company_size">Company size<span class="hint"> (Optional)</span></label>
+            <input type="text" id="company_size" name="company_size" placeholder="e.g. 1–10, 11–50, 50+">
+          </div>
+          <div class="field">
+            <label for="analytics_needs">Analytics needs<span class="hint"> (Optional)</span></label>
+            <textarea id="analytics_needs" name="analytics_needs" placeholder="e.g. sales reporting, inventory, forecasting"></textarea>
+          </div>
+          <div class="field">
+            <label for="primary_data_source">Primary data source<span class="hint"> (Optional)</span></label>
+            <input type="text" id="primary_data_source" name="primary_data_source" placeholder="e.g. Shopify, spreadsheets, CRM">
+          </div>
+          <div class="field">
+            <label for="phone">Phone number<span class="hint"> (Optional)</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="e.g. (555) 123-4567">
+          </div>
+          <div class="submit-row">
+            <button type="submit" class="btn-submit" id="submit-btn">Submit</button>
+          </div>
+        </form>
+        <div id="thank-you" class="thank-you">
+          <h2>Thank you for your submission</h2>
+          <p>We will contact you shortly.</p>
+          <a href="/app" class="btn-dashboard">Back to Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="footer">
+    <span>&copy; <span id="year"></span> {{ app_name }}. All rights reserved.</span>
+  </footer>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+    document.getElementById("contact-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      var btn = document.getElementById("submit-btn");
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+      var payload = {
+        company_size: document.getElementById("company_size").value.trim() || null,
+        analytics_needs: document.getElementById("analytics_needs").value.trim() || null,
+        primary_data_source: document.getElementById("primary_data_source").value.trim() || null,
+        phone: document.getElementById("phone").value.trim() || null
+      };
+      fetch("/api/v1/subscriptions/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      }).then(function(res) {
+        if (res.ok) {
+          document.getElementById("contact-form").style.display = "none";
+          document.getElementById("thank-you").classList.add("visible");
+        } else {
+          btn.disabled = false;
+          btn.textContent = "Submit";
+        }
+      }).catch(function() {
+        btn.disabled = false;
+        btn.textContent = "Submit";
+      });
+    });
+  </script>
+</body>
+</html>

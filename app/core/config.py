@@ -40,6 +40,17 @@ class Settings(BaseSettings):
     # Dashboard URL (provided later)
     dashboard_url: str = "https://dashboard.example.com"
 
+    # Contact (single source for subscribe / contact buttons)
+    contact_phone: str = "4357207571"
+    contact_email: str = "ammon@hunterviz.com"
+
+    # Optional SMTP (to email contact form submissions to contact_email)
+    smtp_host: Optional[str] = None
+    smtp_port: int = 587
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from: Optional[str] = None  # From address; defaults to smtp_user
+
     def ensure_data_dirs(self) -> None:
         Path(self.user_store_path).parent.mkdir(parents=True, exist_ok=True)
         Path(self.subscription_store_path).parent.mkdir(parents=True, exist_ok=True)

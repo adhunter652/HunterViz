@@ -7,10 +7,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.api.middleware import setup_middleware
 from app.core.config import get_settings
-from app.features.auth.api.routes import router as auth_router
-from app.features.auth.view.routes import router as auth_view_router
-from app.features.subscriptions.api.routes import router as subscriptions_router
-from app.features.subscriptions.view.routes import router as subscriptions_view_router
+from app.features.auth.api.routes import pages_router as auth_pages_router, router as auth_router
+from app.features.subscriptions.api.routes import pages_router as subscriptions_pages_router, router as subscriptions_router
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="1.0.0")
@@ -22,14 +20,14 @@ settings.ensure_data_dirs()
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(subscriptions_router, prefix="/api/v1")
 
-# App pages: each feature serves its own views at /app
-app.include_router(auth_view_router, prefix="/app")
-app.include_router(subscriptions_view_router, prefix="/app")
+# App pages: each feature serves its own templates at /app
+app.include_router(auth_pages_router, prefix="/app")
+app.include_router(subscriptions_pages_router, prefix="/app")
 
 # Static files and landing page
 static_dir = Path(__file__).resolve().parent.parent / "static"
 if static_dir.exists():
-    # Mount /assets first so images are always served (e.g. /assets/logo.svg)
+    # Mount /assets first so images are always served (e.g. /assets/logo.png)
     assets_dir = static_dir / "assets"
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")

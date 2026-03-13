@@ -8,16 +8,27 @@ venv/
 env/
 .env
 .env.local
+.env.*.local
 *.egg-info/
 .eggs/
 dist/
 build/
 
+# Testing / coverage
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
 # IDE / editor
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
@@ -27,5 +38,5 @@ Thumbs.db
 *.log
 .cache/
 
-# Optional: uncomment if you don't want to track local data
-# data/
+# Local data (users, subscriptions, contact submissions)
+data/*.json

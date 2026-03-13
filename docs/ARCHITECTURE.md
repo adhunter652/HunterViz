@@ -1,6 +1,6 @@
 # Web App Architecture: Auth & Subscriptions (Python + Stripe)
 
-This document describes an industry-standard architecture for a Python web application that handles **user authentication** and **subscription handling** using **Stripe** for payments and subscriptions. Each feature owns its own **display**: HTML and UI for that feature live in a **view** folder inside the feature.
+This document describes an industry-standard architecture for a Python web application that handles **user authentication** and **subscription handling** using **Stripe** for payments and subscriptions. Each feature owns its own **display**: HTML and UI for that feature live in a **templates** folder inside the feature.
 
 ---
 
@@ -59,9 +59,9 @@ The codebase is organized by **features**, with a shared **core**. Layers (prese
 | Rule | Description |
 |------|-------------|
 | **Core** | Holds shared code used by more than one feature: config, logging, auth interfaces, shared domain types, and shared infrastructure (e.g. file storage abstraction). No business logic that belongs to a single feature. |
-| **Features** | Each feature is a vertical slice: its own API routes, **view** folder (HTML/templates for that feature), use cases, domain entities, and infrastructure. One feature = one bounded context (e.g. auth, subscriptions). There is no separate "business display" feature—each feature owns its own display files. |
+| **Features** | Each feature is a vertical slice: its own API routes, **templates** folder (HTML files for that feature), use cases, domain entities, and infrastructure. One feature = one bounded context (e.g. auth, subscriptions). There is no separate "business display" feature—each feature owns its own display files. |
 | **Dependencies** | Features may depend on **core**. Features should **not** depend on other features; if two features need to collaborate, either move the shared part to core or expose a small interface in core that one feature implements and the other consumes. |
-| **Layers inside each** | Both `core/` and each folder under `features/` keep the same layer names: `api/`, `application/`, `domain/`, `infrastructure/`, plus a **view/** folder for that feature's HTML. This keeps the dependency rule (inner layers don’t depend on outer) consistent everywhere. |
+| **Layers inside each** | Both `core/` and each folder under `features/` keep the same layer names: `api/`, `application/`, `domain/`, `infrastructure/`, plus a **templates/** folder for that feature's HTML files. This keeps the dependency rule (inner layers don’t depend on outer) consistent everywhere. |
 
 ### 3.2 Directory Layout
 
@@ -110,7 +110,7 @@ web-server/
 │   │   │   ├── infrastructure/
 │   │   │   │   ├── __init__.py
 │   │   │   │   └── user_store.py   # Implements UserRepository (e.g. JSON file)
-│   │   │   └── view/               # HTML/templates for this feature
+│   │   │   └── templates/         # HTML files for this feature (no raw HTML in Python)
 │   │   │       ├── login.html
 │   │   │       ├── signup.html
 │   │   │       └── ...
@@ -130,7 +130,7 @@ web-server/
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── stripe_client.py
 │   │   │   │   └── subscription_store.py  # e.g. JSON or same file as users
-│   │   │   └── view/               # HTML/templates for this feature
+│   │   │   └── templates/         # HTML files for this feature (no raw HTML in Python)
 │   │   │       ├── checkout.html
 │   │   │       ├── billing.html
 │   │   │       └── ...
@@ -244,13 +244,14 @@ web-server/
 
 ---
 
-## 6. Per-Feature Display (View Folder)
+## 6. Per-Feature Display (Templates Folder)
 
-Each feature owns its own display. HTML and templates for a feature live in that feature's **view/** folder (e.g. `features/auth/view/`, `features/subscriptions/view/`).
+Each feature owns its own display. HTML for a feature lives in that feature's **templates/** folder (e.g. `features/auth/templates/`, `features/subscriptions/templates/`).
 
-- **Public pages**: Marketing/landing, pricing, feature list—can live in a feature that owns "marketing" or in a dedicated feature with its own view folder. No auth required.
-- **Authenticated pages**: Dashboard, account, billing (links to Stripe Checkout/Portal), usage or feature access—each served by the feature that owns that behavior, from its own **view/** folder.
-- **Separation**: Use route groups or modules per feature; each feature’s API routes serve both JSON and server-rendered pages from its **view/** folder. Middleware/dependencies enforce “public” vs “authenticated” vs “subscribed.”
+- **HTML from files only**: HTML pages must **always** be loaded from `.html` files in the feature's **templates/** folder. Do **not** embed raw HTML strings in Python (e.g. in route handlers or page modules). The Python code should read and render the corresponding `.html` file (e.g. via a template engine or by returning the file contents). This keeps markup out of application code and makes UI changes easier to maintain.
+- **Public pages**: Marketing/landing, pricing, feature list—can live in a feature that owns "marketing" or in a dedicated feature with its own templates folder. No auth required.
+- **Authenticated pages**: Dashboard, account, billing (links to Stripe Checkout/Portal), usage or feature access—each served by the feature that owns that behavior, from its own **templates/** folder.
+- **Separation**: Use route groups or modules per feature; each feature’s API routes serve both JSON and server-rendered pages from its **templates/** folder. Middleware/dependencies enforce “public” vs “authenticated” vs “subscribed.”
 
 ---
 
@@ -429,8 +430,8 @@ Static site: “Sign in” and “Sign up” should link to **`/app`** or **`/ap
 ┌──────────────────────────────────────────────────────────────────┐
 │                     Python Web Application                        │
 │  ┌─────────────┐  ┌─────────────┐                                │
-│  │ Auth API    │  │ Subs API    │  (each feature has api/ + view/)│
-│  │ + view/     │  │ + view/     │                                │
+│  │ Auth API    │  │ Subs API    │  (each feature has api/ + templates/)│
+│  │ + templates/│  │ + templates/│                                │
 │  │ (login,     │  │ (checkout,  │                                │
 │  │  register,  │  │  portal,    │                                │
 │  │  pages)     │  │  webhook,   │                                │
@@ -466,4 +467,4 @@ Static site: “Sign in” and “Sign up” should link to **`/app`** or **`/ap
 
 ---
 
-This architecture gives you a clear separation of concerns, secure auth, reliable subscription state via Stripe and webhooks, and a scalable structure for adding more features later. Implement incrementally: auth first (including its view/ pages), then Stripe Checkout and webhooks, then Customer Portal and each feature's view/ as needed.
+This architecture gives you a clear separation of concerns, secure auth, reliable subscription state via Stripe and webhooks, and a scalable structure for adding more features later. Implement incrementally: auth first (including its templates/ pages), then Stripe Checkout and webhooks, then Customer Portal and each feature's templates/ as needed.
