@@ -1,12 +1,16 @@
 """App entry: mount core + feature routers, static landing."""
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
+
+logger = logging.getLogger(__name__)
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.api.middleware import setup_middleware
 from app.core.config import get_settings
+from app.core.infrastructure.gcs_sync import start_background_sync, sync_from_bucket
 from app.features.auth.api.routes import pages_router as auth_pages_router, router as auth_router
 from app.features.subscriptions.api.routes import pages_router as subscriptions_pages_router, router as subscriptions_router
 
@@ -30,6 +34,14 @@ def _validate_secret_key_for_production() -> None:
 def startup():
     _validate_secret_key_for_production()
     settings.ensure_data_dirs()
+    # Pull JSON data from GCS bucket if configured (bucket as database).
+    # Never let GCS failures block startup so the container can always listen on PORT.
+    try:
+        sync_from_bucket(settings)
+        if settings.gcs_data_bucket:
+            start_background_sync(get_settings)
+    except Exception as e:
+        logger.warning("GCS sync disabled at startup: %s", e, exc_info=True)
 
 
 setup_middleware(app, allowed_origins=settings.get_cors_origins_list())

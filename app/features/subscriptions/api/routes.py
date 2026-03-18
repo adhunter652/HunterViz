@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from app.core.api.deps import get_config, get_current_user_id
 from app.core.config import Settings
 from app.core.domain.value_objects import UserId
+from app.core.infrastructure.gcs_sync import push_data_file
 from app.core.infrastructure.templating import render_template
 from app.features.subscriptions.application.subscription_service import SubscriptionService
 from app.features.subscriptions.domain.subscription import DEFAULT_PLAN
@@ -99,6 +100,7 @@ def _send_contact_email(
         record["user_company_name"] = user_company_name
         submissions.append(record)
         path.write_text(json.dumps(submissions, indent=2), encoding="utf-8")
+        push_data_file(config, path)
 
 
 def get_auth_service(settings: Settings):

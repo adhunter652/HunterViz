@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Optional
 
 from app.core.application.ports import UserRepository
+from app.core.config import get_settings
 from app.core.domain.value_objects import Email, UserId
+from app.core.infrastructure.gcs_sync import push_data_file
 
 
 class JsonUserStore(UserRepository):
@@ -24,6 +26,7 @@ class JsonUserStore(UserRepository):
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         tmp.replace(self._path)
+        push_data_file(get_settings(), self._path)
 
     def get_by_id(self, user_id: UserId) -> Optional[dict]:
         data = self._read()

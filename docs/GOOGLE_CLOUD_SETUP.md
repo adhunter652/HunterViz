@@ -86,8 +86,32 @@ Set these (via `--set-env-vars` or the Cloud Run UI) from [app/core/config.py](.
 | `CONTACT_PHONE` | Optional | Default in code. |
 | `SMTP_*` | Optional | If you want contact form submissions emailed. |
 | `STRIPE_*` | Optional | For subscribe/checkout. |
+| `GCS_DATA_BUCKET` | Optional | When set (e.g. `hunterviz-data`), JSON data files are synced to this bucket: pull on startup and every 20s, push on every write. Grant the Cloud Run service account `roles/storage.objectAdmin` on the bucket. |
 
-### 3.3 Three entry routes
+### 3.3 "STARTUP TCP probe failed" / Connection CANCELLED
+
+If the container fails to start and you see:
+
+- **Default STARTUP TCP probe failed … for container "…" on port 8080**
+- **Connection failed with status CANCELLED**
+
+the app is exiting before it can listen on port 8080. The usual cause is **production SECRET_KEY validation**: in production the app refuses to run if `SECRET_KEY` is missing or still the default placeholder, so the process exits and the probe never succeeds.
+
+**Fix:** Set `SECRET_KEY` (and `CLOUD_RUN_URL` if needed) on the Cloud Run service. Either:
+
+1. **One-time via gcloud** (env vars persist across future Cloud Build deploys):
+   ```bash
+   gcloud run services update hunterviz-web \
+     --region us-central1 \
+     --set-env-vars "PORT=8080,SECRET_KEY=YOUR_STRONG_SECRET,CLOUD_RUN_URL=https://app.hunterviz.com"
+   ```
+   Use a strong random value for `SECRET_KEY` (e.g. from `openssl rand -hex 32`). Prefer Secret Manager for production (see [SECURITY.md](SECURITY.md)).
+
+2. **In Google Cloud Console:** Cloud Run → select `hunterviz-web` → Edit & deploy new revision → Variables & secrets → add `SECRET_KEY` (and others as in §3.2).
+
+After saving, new revisions will keep these variables; the next deploy (or a new request that starts an instance) should pass the startup probe.
+
+### 3.4 Three entry routes
 
 The service wakes on the first request to any of:
 

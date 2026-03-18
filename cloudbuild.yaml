@@ -35,7 +35,9 @@ steps:
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/${_SERVICE_NAME}:${SHORT_SHA}
     waitFor: [build]
 
-  # Deploy to Cloud Run (min instances 0 so service starts on first request to /app/login, /app/signup, /app/contact)
+  # Deploy to Cloud Run (min instances 0 so service starts on first request to /app/login, /app/signup, /app/contact).
+  # Required env vars (SECRET_KEY, CLOUD_RUN_URL, PORT) must be set on the service (e.g. gcloud run services update ... --set-env-vars)
+  # or the app will fail startup and the TCP probe on 8080 will fail. See docs/GOOGLE_CLOUD_SETUP.md §3.1–3.3.
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: deploy
     entrypoint: gcloud

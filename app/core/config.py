@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # Subscription store
     subscription_store_path: str = "data/subscriptions.json"
 
+    # GCS data bucket: when set, JSON data files are synced to this bucket (pull on startup + every 20s, push on write).
+    gcs_data_bucket: Optional[str] = None
+
     # App server URL (static site hunterviz.com links here for Sign in / Sign up / Contact)
     cloud_run_url: str = "https://app.hunterviz.com"
 
