@@ -185,7 +185,7 @@ After the first successful deploy, map **app.hunterviz.com** to your Cloud Run s
 
 ## 6. Separate admin/build service (optional)
 
-You can run a **second Cloud Run service** (e.g. for client management or admin operations) that is **not** public and has **separate IAM permissions**.
+The **admin server** runs in the **same GCP project** as the main server (same project ID). It is a second Cloud Run service that is **not** public and has **separate IAM permissions**.
 
 ### 6.1 Why a separate service?
 
@@ -198,6 +198,17 @@ You can run a **second Cloud Run service** (e.g. for client management or admin 
 ### 6.2 Build and deploy the admin service
 
 The admin app lives in **`admin-server/`** (separate FastAPI app, own Dockerfile). The config **`cloudbuild-admin.yaml`** at repo root builds from `admin-server/` and deploys the admin service.
+
+**If push fails with "Repository docker-repo not found":** Create the Artifact Registry repository once in the same project (both main and admin use the same project and same `docker-repo`):
+
+```bash
+gcloud artifacts repositories create docker-repo \
+  --repository-format=docker \
+  --location=us-central1 \
+  --project=hunterviz
+```
+
+Use your actual project ID if different from `hunterviz`. After this, both `cloudbuild.yaml` (main app) and `cloudbuild-admin.yaml` (admin) push to the same repo.
 
 1. **Create a second Cloud Build trigger** (or run manually):
    - In Cloud Console → Cloud Build → Triggers → **Create trigger**.
@@ -227,6 +238,8 @@ The admin app lives in **`admin-server/`** (separate FastAPI app, own Dockerfile
    To call the service, use an identity token (e.g. `gcloud auth print-identity-token`) in the `Authorization: Bearer` header, or use Identity-Aware Proxy in front of it.
 
 ### 6.3 Summary
+
+Both services are in the **same GCP project** (same project ID). They share the same Artifact Registry repository (`docker-repo`).
 
 | Service            | Config file              | Access                          | Use case                    |
 |--------------------|--------------------------|----------------------------------|-----------------------------|
