@@ -12,6 +12,7 @@ from app.core.application.ports import UserRepository
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 BCRYPT_MAX_PASSWORD_BYTES = 72
+MIN_PASSWORD_LENGTH = 8
 
 
 def _truncate_password_bytes(password: str) -> bytes:
@@ -69,6 +70,8 @@ class AuthService:
         password: str,
         company_name: str = "",
     ) -> dict:
+        if not password or len(password) < MIN_PASSWORD_LENGTH:
+            raise ValueError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
         email_val = Email(email.strip().lower())
         existing = self._repo.get_by_email(email_val)
         if existing:

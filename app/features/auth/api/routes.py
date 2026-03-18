@@ -1,7 +1,7 @@
 """POST login, register, refresh; serve sign-in/sign-up and dashboard pages from templates."""
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from app.core.api.deps import get_config, get_current_user_id
 from app.core.config import Settings
@@ -20,7 +20,7 @@ class LoginBody(BaseModel):
 
 class RegisterBody(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8, description="At least 8 characters")
     company_name: str = ""
 
 
@@ -49,7 +49,8 @@ def login(body: LoginBody, config: Settings = Depends(get_config)):
         path="/",
         max_age=config.access_token_expire_minutes * 60,
         samesite="lax",
-        httponly=False,
+        httponly=True,
+        secure=config.get_cookie_secure(),
     )
     return response
 
@@ -70,6 +71,20 @@ def me(user_id: UserId = Depends(get_current_user_id), config: Settings = Depend
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.post("/logout")
+def logout(config: Settings = Depends(get_config)):
+    """Clear the auth cookie. Client should discard any stored token."""
+    response = JSONResponse(content={"ok": True})
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        httponly=True,
+        secure=config.get_cookie_secure(),
+        samesite="lax",
+    )
+    return response
 
 
 # --- App pages (HTML from feature templates) ---

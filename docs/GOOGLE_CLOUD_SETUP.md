@@ -4,6 +4,8 @@ This guide walks you through setting up **Google Cloud Run** (scale-to-zero), **
 
 **Project:** ID `hunterviz`, number `310331161278`.
 
+For production security (secrets, IAM, rate limiting, cookies, etc.), see **[SECURITY.md](SECURITY.md)**.
+
 ---
 
 ## 1. Prerequisites

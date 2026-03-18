@@ -1,4 +1,8 @@
-"""Checkout, portal, webhook; plan info and subscribe/contact pages from templates."""
+"""Checkout, portal, webhook; plan info and subscribe/contact pages from templates.
+
+When adding a Stripe webhook endpoint (e.g. POST /api/v1/webhooks/stripe), you must verify
+every request with stripe.Webhook.construct_event(payload, signature_header, webhook_secret)
+using STRIPE_WEBHOOK_SECRET before processing. See docs/SECURITY.md."""
 import json
 import smtplib
 from email.mime.text import MIMEText

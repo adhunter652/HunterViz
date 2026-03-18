@@ -1,204 +1,322 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up — {{ app_name }}</title>
-  <link rel="icon" type="image/svg+xml" href="/assets/logo.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --header-bg: rgba(248, 250, 252, 0.9);
-      --text: #0f172a;
-      --text-muted: #475569;
-      --accent: #2563eb;
-      --accent-hover: #1d4ed8;
-      --accent-tint: rgba(59, 130, 246, 0.15);
-      --border: rgba(15, 23, 42, 0.08);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      font-family: "DM Sans", system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      font-size: 1rem;
-    }
-    .header {
-      flex-shrink: 0;
-      height: 150px;
-      display: flex;
-      justify-content: space-between;
-      align-items: start;
-      padding: 1rem 1.5rem;
-      background: linear-gradient(to bottom, #bfdbfe 0%, var(--bg) 100%);
-      z-index: 100;
-    }
-    .logo-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      text-decoration: none;
-      color: var(--text);
-    }
-    .logo-wrap .logo-img { height: 32px; width: auto; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
-    .logo-wrap .company-name-img { height: 24px; width: auto; display: block; }
-    .nav { display: flex; align-items: center; gap: 0.5rem; }
-    .nav a {
-      color: var(--text-muted);
-      text-decoration: none;
-      padding: 0.4rem 0.875rem;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-    .nav a:hover { color: var(--text); background: var(--accent-tint); }
-    .nav .signup { background: var(--accent); color: #fff; }
-    .nav .signup:hover { background: var(--accent-hover); color: #fff; }
-    main {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1.5rem;
-      background: var(--bg);
-    }
-    .card {
-      width: 100%;
-      max-width: 360px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 2.5rem;
-    }
-    .brand { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; text-decoration: none; color: var(--text); }
-    .card h1 { margin: 0 0 1.5rem 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
-    label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500; color: var(--text); }
-    input {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      margin-bottom: 1rem;
-      font: inherit;
-      font-size: 1rem;
-      color: var(--text);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input::placeholder { color: var(--text-muted); }
-    input:focus {
-      outline: none;
-      border-color: rgba(59, 130, 246, 0.5);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-    }
-    .error { color: #f87171; margin-bottom: 1rem; font-size: 0.9rem; }
-    button[type="submit"] {
-      width: 100%;
-      padding: 0.875rem 1.75rem;
-      margin-top: 0.5rem;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    button[type="submit"]:hover { background: var(--accent-hover); color: #fff; }
-    button[type="submit"]:disabled { opacity: 0.7; cursor: not-allowed; }
-    .link { margin-top: 1rem; text-align: center; font-size: 1rem; color: var(--text-muted); }
-    .link a { color: var(--accent); text-decoration: none; }
-    .link a:hover { text-decoration: underline; }
-    .footer {
-      flex-shrink: 0;
-      padding: 0.75rem 1.5rem;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.8125rem;
-      background: linear-gradient(to bottom, var(--bg) 0%, #e2e8f0 100%);
-    }
-  </style>
-</head>
-<body>
-  <header class="header">
-    <a href="/" class="logo-wrap">
-      <img src="/assets/logo.png" alt="" class="logo-img">
-      <img src="/assets/company-name.png" alt="{{ app_name }}" class="company-name-img">
-    </a>
-    <nav class="nav">
-      <a href="/app/login">Sign in</a>
-      <a href="/app/signup" class="signup">Sign up</a>
-    </nav>
-  </header>
-  <main>
-    <div class="card">
-      <a href="/" class="brand">
-        <img src="/assets/logo.png" alt="" class="logo-img">
-        <img src="/assets/company-name.png" alt="{{ app_name }}" class="company-name-img">
-      </a>
-      <h1>Sign Up</h1>
-      <div id="error" class="error" style="display:none;"></div>
-      <form id="form">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required>
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
-        <label for="company_name">Company name</label>
-        <input type="text" id="company_name" name="company_name" placeholder="My Company">
-        <button type="submit">Sign Up</button>
-      </form>
-      <p class="link">Already have an account? <a href="/app/login">Sign in</a></p>
-    </div>
-  </main>
-  <footer class="footer">
-    <span>&copy; <span id="year"></span> {{ app_name }}. All rights reserved.</span>
-  </footer>
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
-    var form = document.getElementById('form');
-    var errorEl = document.getElementById('error');
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      errorEl.style.display = 'none';
-      var submitBtn = form.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Signing up…';
-      var res = await fetch('/api/v1/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.email.value,
-          password: form.password.value,
-          company_name: form.company_name.value || 'My Company'
-        })
-      });
-      var data = await res.json().catch(function() { return {}; });
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Sign Up';
-      if (!res.ok) {
-        errorEl.textContent = data.detail || 'Sign up failed';
-        errorEl.style.display = 'block';
-        return;
-      }
-      var loginRes = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email.value, password: form.password.value })
-      });
-      var loginData = await loginRes.json().catch(function() { return {}; });
-      if (loginRes.ok) localStorage.setItem('access_token', loginData.access_token);
-      window.location.href = '/app/subscribe';
-    });
-  </script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sign Up — {{ app_name }}</title>
+        <link rel="icon" type="image/svg+xml" href="/assets/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --bg: #f8fafc;
+                --surface: #ffffff;
+                --header-bg: rgba(248, 250, 252, 0.9);
+                --text: #0f172a;
+                --text-muted: #475569;
+                --accent: #2563eb;
+                --accent-hover: #1d4ed8;
+                --accent-tint: rgba(59, 130, 246, 0.15);
+                --border: rgba(15, 23, 42, 0.08);
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                font-family:
+                    "DM Sans",
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.5;
+                font-size: 1rem;
+            }
+            .header {
+                flex-shrink: 0;
+                height: 150px;
+                display: flex;
+                justify-content: space-between;
+                align-items: start;
+                padding: 1rem 1.5rem;
+                background: linear-gradient(
+                    to bottom,
+                    #bfdbfe 0%,
+                    var(--bg) 100%
+                );
+                z-index: 100;
+            }
+            .logo-wrap {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                text-decoration: none;
+                color: var(--text);
+            }
+            .logo-wrap .logo-img {
+                height: 32px;
+                width: auto;
+                object-fit: contain;
+                border-radius: 6px;
+                flex-shrink: 0;
+            }
+            .logo-wrap .company-name-img {
+                height: 24px;
+                width: auto;
+                display: block;
+            }
+            .nav {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .nav a {
+                color: var(--text-muted);
+                text-decoration: none;
+                padding: 0.4rem 0.875rem;
+                border-radius: 6px;
+                font-size: 0.875rem;
+                font-weight: 500;
+            }
+            .nav a:hover {
+                color: var(--text);
+                background: var(--accent-tint);
+            }
+            .nav .signup {
+                background: var(--accent);
+                color: #fff;
+            }
+            .nav .signup:hover {
+                background: var(--accent-hover);
+                color: #fff;
+            }
+            main {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 2rem 1.5rem;
+                background: var(--bg);
+            }
+            .card {
+                width: 100%;
+                max-width: 360px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 2.5rem;
+            }
+            .brand {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                margin-bottom: 1.5rem;
+                text-decoration: none;
+                color: var(--text);
+            }
+            .card h1 {
+                margin: 0 0 1.5rem 0;
+                font-size: 1.5rem;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                color: var(--text);
+            }
+            label {
+                display: block;
+                margin-bottom: 0.25rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: var(--text);
+            }
+            input {
+                width: 100%;
+                padding: 0.6rem 0.75rem;
+                margin-bottom: 1rem;
+                font: inherit;
+                font-size: 1rem;
+                color: var(--text);
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                transition:
+                    border-color 0.2s,
+                    box-shadow 0.2s;
+            }
+            input::placeholder {
+                color: var(--text-muted);
+            }
+            input:focus {
+                outline: none;
+                border-color: rgba(59, 130, 246, 0.5);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            }
+            input.error-border {
+                border-color: #f87171;
+            }
+            .error {
+                color: #f87171;
+                margin-bottom: 1rem;
+                font-size: 0.9rem;
+            }
+            button[type="submit"] {
+                width: 100%;
+                padding: 0.875rem 1.75rem;
+                margin-top: 0.5rem;
+                background: var(--accent);
+                color: #fff;
+                border: none;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                font-family: inherit;
+            }
+            button[type="submit"]:hover {
+                background: var(--accent-hover);
+                color: #fff;
+            }
+            button[type="submit"]:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+            .link {
+                margin-top: 1rem;
+                text-align: center;
+                font-size: 1rem;
+                color: var(--text-muted);
+            }
+            .link a {
+                color: var(--accent);
+                text-decoration: none;
+            }
+            .link a:hover {
+                text-decoration: underline;
+            }
+            .footer {
+                flex-shrink: 0;
+                padding: 0.75rem 1.5rem;
+                text-align: center;
+                color: var(--text-muted);
+                font-size: 0.8125rem;
+                background: linear-gradient(
+                    to bottom,
+                    var(--bg) 0%,
+                    #e2e8f0 100%
+                );
+            }
+        </style>
+    </head>
+    <body>
+        <header class="header">
+            <a href="/" class="logo-wrap">
+                <img src="/assets/company-name.png" alt="{{ app_name }}" class="company-name-img" />
+            </a>
+            <nav class="nav">
+                <a href="/app/login" class="signup">Sign in</a>
+                <a href="/app/signup">Sign up</a>
+            </nav>
+        </header>
+        <main>
+            <div class="card">
+                <a href="/" class="brand">
+                    <img
+                        src="/assets/logo.png"
+                        alt=""
+                        class="logo-img"
+                        height="32"
+                        width="auto"
+                    />
+                </a>
+                <h1>Sign Up</h1>
+                <div id="error" class="error" style="display: none"></div>
+                <form id="form">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required />
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                    />
+                    <label for="company_name">Company name</label>
+                    <input
+                        type="text"
+                        id="company_name"
+                        name="company_name"
+                        placeholder="My Company"
+                    />
+                    <button type="submit">Sign Up</button>
+                </form>
+                <p class="link">
+                    Already have an account? <a href="/app/login">Sign in</a>
+                </p>
+            </div>
+        </main>
+        <footer class="footer">
+            <span
+                >&copy; <span id="year"></span> {{ app_name }}. All rights
+                reserved.</span
+            >
+        </footer>
+        <script>
+            document.getElementById("year").textContent =
+                new Date().getFullYear();
+            var form = document.getElementById("form");
+            var errorEl = document.getElementById("error");
+            form.addEventListener("submit", async function (e) {
+                e.preventDefault();
+                errorEl.style.display = "none";
+                var submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Signing up…";
+                var res = await fetch("/api/v1/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: form.email.value,
+                        password: form.password.value,
+                        company_name: form.company_name.value || "My Company",
+                    }),
+                });
+                var data = await res.json().catch(function () {
+                    return {};
+                });
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Sign Up";
+                if (!res.ok) {
+                    errorEl.textContent = data.detail || "Sign up failed";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                var loginRes = await fetch("/api/v1/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: form.email.value,
+                        password: form.password.value,
+                    }),
+                });
+                var loginData = await loginRes.json().catch(function () {
+                    return {};
+                });
+                if (loginRes.ok)
+                    localStorage.setItem(
+                        "access_token",
+                        loginData.access_token
+                    );
+                window.location.href = "/app/subscribe";
+            });
+        </script>
+    </body>
 </html>

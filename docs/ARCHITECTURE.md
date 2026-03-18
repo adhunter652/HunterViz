@@ -364,6 +364,8 @@ So: **hunterviz.com = static site, always-on, no cold start**. **app.hunterviz.c
 
 ## 9. Security Checklist
 
+**Full checklist and policies:** See **[docs/SECURITY.md](SECURITY.md)** for the application security policy, repository checklist, Google Cloud checklist, and external (Stripe, DNS, process) steps.
+
 - [ ] All credentials and API keys in environment variables (e.g. `.env`), never in code.
 - [ ] Stripe **webhook secret** used only for signature verification; different from publishable/secret key.
 - [ ] **CORS** restricted to your frontend origins.

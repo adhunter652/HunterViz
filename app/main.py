@@ -13,8 +13,26 @@ from app.features.subscriptions.api.routes import pages_router as subscriptions_
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="1.0.0")
 
-setup_middleware(app)
-settings.ensure_data_dirs()
+
+def _validate_secret_key_for_production() -> None:
+    """Fail startup if production and SECRET_KEY is missing or default placeholder."""
+    from app.core.config import SECRET_KEY_DEFAULT_PLACEHOLDER
+    if settings.is_production() and (
+        not settings.secret_key or settings.secret_key == SECRET_KEY_DEFAULT_PLACEHOLDER
+    ):
+        raise RuntimeError(
+            "SECRET_KEY must be set to a strong value in production; "
+            "never use the default placeholder. Use Secret Manager or a secure env var."
+        )
+
+
+@app.on_event("startup")
+def startup():
+    _validate_secret_key_for_production()
+    settings.ensure_data_dirs()
+
+
+setup_middleware(app, allowed_origins=settings.get_cors_origins_list())
 
 # API
 app.include_router(auth_router, prefix="/api/v1")
