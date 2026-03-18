@@ -1,6 +1,6 @@
 """Admin server entry. Separate from main app; IAP handles auth."""
 import logging
-from pathlib import Path
+import threading
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
@@ -16,15 +16,22 @@ settings = get_settings()
 app = FastAPI(title=settings.app_name, version="1.0.0")
 
 
-@app.on_event("startup")
-def startup():
-    settings.ensure_data_dirs()
+def _do_initial_sync() -> None:
+    """Run in background so we don't block server from binding to PORT (Cloud Run startup timeout)."""
     try:
-        sync_from_bucket(settings)
-        if settings.gcs_data_bucket:
+        s = get_settings()
+        s.ensure_data_dirs()
+        sync_from_bucket(s)
+        if s.gcs_data_bucket:
             start_background_sync(get_settings)
     except Exception as e:
         logger.warning("GCS sync disabled at startup: %s", e, exc_info=True)
+
+
+@app.on_event("startup")
+def startup():
+    # Defer GCS sync to a thread so the server can bind to PORT immediately and pass Cloud Run's health check.
+    threading.Thread(target=_do_initial_sync, daemon=True, name="initial-gcs-sync").start()
 
 
 setup_middleware(app, allowed_origins=settings.get_cors_origins_list())
