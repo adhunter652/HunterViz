@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users — {{ app_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --accent: #0f766e;
+      --accent-hover: #0d9488;
+      --border: rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .header {
+      padding: 1rem 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+    main { padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+    .users-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .users-table th,
+    .users-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .users-table th { background: var(--bg); font-weight: 600; font-size: 0.875rem; color: var(--text-muted); }
+    .users-table tr:last-child td { border-bottom: none; }
+    .users-table a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .users-table a:hover { text-decoration: underline; }
+    .empty { color: var(--text-muted); text-align: center; padding: 2rem; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>{{ app_name }} — User list</h1>
+  </header>
+  <main>
+    {% if users %}
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Company</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.email or '—' }}</td>
+          <td>{{ u.company_name or '—' }}</td>
+          <td>{{ u.created_at[:10] if u.created_at else '—' }}</td>
+          <td><a href="/users/{{ u.id }}">Edit</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No users yet.</p>
+    {% endif %}
+  </main>
+</body>
+</html>

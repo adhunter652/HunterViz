@@ -180,3 +180,55 @@ Ensure the Cloud Build service account has roles: **Cloud Run Admin**, **Storage
 | Trigger | Push to `main` runs `cloudbuild.yaml` → build → push → deploy. |
 
 After the first successful deploy, map **app.hunterviz.com** to your Cloud Run service (e.g. via Load Balancer or Cloud Run custom domain), set **CLOUD_RUN_URL** to `https://app.hunterviz.com`, and ensure the static site at **hunterviz.com** links to the URLs in section 3.3.
+
+---
+
+## 6. Separate admin/build service (optional)
+
+You can run a **second Cloud Run service** (e.g. for client management or admin operations) that is **not** public and has **separate IAM permissions**.
+
+### 6.1 Why a separate service?
+
+- **Public service** (`hunterviz-web`): `--allow-unauthenticated`; anyone can hit the app; app-level auth (JWT/cookie) protects sensitive routes.
+- **Admin service** (`hunterviz-admin`): `--no-allow-unauthenticated`; only IAM principals you grant **Cloud Run Invoker** can call it. Use this for:
+  - Admin or client-management UIs/APIs
+  - Separate permissions (e.g. only certain users or a dedicated admin service account can invoke it)
+  - Same or different codebase (same Dockerfile is fine; differentiate with env vars or routes if needed)
+
+### 6.2 Build and deploy the admin service
+
+The admin app lives in **`admin-server/`** (separate FastAPI app, own Dockerfile). The config **`cloudbuild-admin.yaml`** at repo root builds from `admin-server/` and deploys the admin service.
+
+1. **Create a second Cloud Build trigger** (or run manually):
+   - In Cloud Console → Cloud Build → Triggers → **Create trigger**.
+   - Name: e.g. `hunterviz-admin-deploy`.
+   - Event: Push to branch (e.g. `main`) or **Manual**.
+   - Configuration: **Cloud Build configuration file**; path: **`cloudbuild-admin.yaml`** (repo root).
+
+   Or run from repo root (build context is `admin-server/`):
+   ```bash
+   gcloud builds submit --config=cloudbuild-admin.yaml .
+   ```
+
+2. **First-time deploy / env vars:** Set the same required env vars as the public service (e.g. `PORT`, `SECRET_KEY`, `CLOUD_RUN_URL`). You can point `CLOUD_RUN_URL` to the admin URL or a separate base URL if you use one.
+   ```bash
+   gcloud run services update hunterviz-admin \
+     --region us-central1 \
+     --set-env-vars "PORT=8080,SECRET_KEY=YOUR_STRONG_SECRET,CLOUD_RUN_URL=https://admin.hunterviz.com"
+   ```
+
+3. **Grant access:** Only principals with **Cloud Run Invoker** on `hunterviz-admin` can call it. Grant yourself (or an admin group):
+   ```bash
+   gcloud run services add-iam-policy-binding hunterviz-admin \
+     --region=us-central1 \
+     --member="user:your-email@example.com" \
+     --role="roles/run.invoker"
+   ```
+   To call the service, use an identity token (e.g. `gcloud auth print-identity-token`) in the `Authorization: Bearer` header, or use Identity-Aware Proxy in front of it.
+
+### 6.3 Summary
+
+| Service            | Config file              | Access                          | Use case                    |
+|--------------------|--------------------------|----------------------------------|-----------------------------|
+| `hunterviz-web`    | `cloudbuild.yaml`        | Public (`--allow-unauthenticated`) | App at app.hunterviz.com    |
+| `hunterviz-admin`  | `cloudbuild-admin.yaml`  | IAM only (`--no-allow-unauthenticated`) | Client management, admin   |
