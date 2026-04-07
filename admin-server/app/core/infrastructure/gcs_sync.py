@@ -60,7 +60,8 @@ def sync_from_bucket(settings: AdminSettings) -> None:
     if not bucket:
         return
     for blob_name, local_path in _data_file_pairs(settings):
-            # pull_file(bucket, blob_name, local_path)  # Deprecated: users now in Firestore
+        # pull_file(bucket, blob_name, local_path)  # Deprecated: users now in Firestore
+        pass
 
 
 def push_data_file(settings: AdminSettings, local_path: str | Path) -> None:
