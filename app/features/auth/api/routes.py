@@ -25,8 +25,8 @@ class RegisterBody(BaseModel):
 
 
 def get_auth_service(settings: Settings) -> AuthService:
-    from app.features.auth.infrastructure.user_store import JsonUserStore
-    repo = JsonUserStore(settings.user_store_path)
+    from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
+    repo = FirestoreUserStore()
     return AuthService(
         user_repository=repo,
         secret_key=settings.secret_key,
@@ -118,10 +118,10 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
     user_id = payload.get("sub")
     if not user_id:
         return RedirectResponse(url="/app/login", status_code=302)
-    from app.features.auth.infrastructure.user_store import JsonUserStore
+    from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
     from app.features.subscriptions.infrastructure.subscription_store import JsonSubscriptionStore
 
-    user_store = JsonUserStore(config.user_store_path)
+    user_store = FirestoreUserStore()
     sub_store = JsonSubscriptionStore(config.subscription_store_path)
     user = user_store.get_by_id(UserId(user_id))
     if not user:

@@ -105,8 +105,8 @@ def _send_contact_email(
 
 def get_auth_service(settings: Settings):
     from app.features.auth.application.auth_service import AuthService
-    from app.features.auth.infrastructure.user_store import JsonUserStore
-    repo = JsonUserStore(settings.user_store_path)
+    from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
+    repo = FirestoreUserStore()
     return AuthService(
         user_repository=repo,
         secret_key=settings.secret_key,

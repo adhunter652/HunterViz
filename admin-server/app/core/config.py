@@ -18,8 +18,8 @@ class AdminSettings(BaseSettings):
     debug: bool = False
     port: int = 8001
 
-    # Same paths as main app so we read/write the same GCS blobs (users.json, etc.)
-    user_store_path: str = "data/users.json"
+    # User store path is deprecated; Firestore is now used for users.
+    # user_store_path: str = None
     subscription_store_path: str = "data/subscriptions.json"
 
     # Same GCS bucket as main app
@@ -29,7 +29,6 @@ class AdminSettings(BaseSettings):
     cors_origins: str = "http://localhost:8001,http://127.0.0.1:8001"
 
     def ensure_data_dirs(self) -> None:
-        Path(self.user_store_path).parent.mkdir(parents=True, exist_ok=True)
         Path(self.subscription_store_path).parent.mkdir(parents=True, exist_ok=True)
 
     def is_production(self) -> bool:

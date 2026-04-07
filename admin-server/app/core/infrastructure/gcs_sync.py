@@ -21,7 +21,7 @@ def _client():
 
 def _data_file_pairs(settings: AdminSettings) -> list[tuple[str, Path]]:
     paths = [
-        settings.user_store_path,
+           # settings.user_store_path,  # Deprecated: users now in Firestore
         settings.subscription_store_path,
         str(Path(settings.subscription_store_path).parent / "contact_submissions.json"),
     ]
@@ -60,7 +60,7 @@ def sync_from_bucket(settings: AdminSettings) -> None:
     if not bucket:
         return
     for blob_name, local_path in _data_file_pairs(settings):
-        pull_file(bucket, blob_name, local_path)
+            # pull_file(bucket, blob_name, local_path)  # Deprecated: users now in Firestore
 
 
 def push_data_file(settings: AdminSettings, local_path: str | Path) -> None:

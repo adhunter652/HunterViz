@@ -4,13 +4,13 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.core.config import AdminSettings, get_settings
 from app.core.infrastructure.templating import render_template
-from app.features.users.store import UserStore
+from app.features.users.firestore_store import FirestoreUserStore
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-def get_user_store(settings: AdminSettings = Depends(get_settings)) -> UserStore:
-    return UserStore(settings.user_store_path)
+def get_user_store() -> FirestoreUserStore:
+    return FirestoreUserStore()
 
 
 # --- Pages ---
@@ -20,7 +20,7 @@ def get_user_store(settings: AdminSettings = Depends(get_settings)) -> UserStore
 @router.get("/", response_class=HTMLResponse)
 def list_users_page(
     request: Request,
-    store: UserStore = Depends(get_user_store),
+    store: FirestoreUserStore = Depends(get_user_store),
     settings: AdminSettings = Depends(get_settings),
 ):
     users = store.list_users()
@@ -42,7 +42,16 @@ def edit_user_page(
     user = store.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    # Do not pass password_hash to template
+    return HTMLResponse(
+        render_template(
+            "edit_user",
+            {
+                "app_name": settings.app_name,
+                "user": safe_user,
+                "dashboards": dashboards,
+            },
+        )
+    )
     safe_user = {k: v for k, v in user.items() if k != "password_hash"}
     dashboards = user.get("dashboards") or []
     return HTMLResponse(
