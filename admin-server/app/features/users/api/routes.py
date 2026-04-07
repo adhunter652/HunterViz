@@ -74,7 +74,7 @@ def update_user(
     user_id: str,
     email: str = Form(..., alias="email"),
     company_name: str = Form("", alias="company_name"),
-    store: UserStore = Depends(get_user_store),
+    store: FirestoreUserStore = Depends(get_user_store),
 ):
     user = store.get_by_id(user_id)
     if not user:
@@ -93,7 +93,7 @@ def add_dashboard(
     user_id: str,
     id: str = Form("", alias="dashboard_id"),
     link: str = Form("", alias="dashboard_link"),
-    store: UserStore = Depends(get_user_store),
+    store: FirestoreUserStore = Depends(get_user_store),
 ):
     user = store.get_by_id(user_id)
     if not user:
