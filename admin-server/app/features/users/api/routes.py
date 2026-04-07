@@ -36,7 +36,7 @@ def list_users_page(
 def edit_user_page(
     request: Request,
     user_id: str,
-    store: UserStore = Depends(get_user_store),
+    store: FirestoreUserStore = Depends(get_user_store),
     settings: AdminSettings = Depends(get_settings),
 ):
     user = store.get_by_id(user_id)
