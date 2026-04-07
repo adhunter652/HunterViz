@@ -110,7 +110,7 @@ def add_dashboard(
 def remove_dashboard(
     user_id: str,
     dashboard_index: int = Form(..., alias="dashboard_index"),
-    store: UserStore = Depends(get_user_store),
+    store: FirestoreUserStore = Depends(get_user_store),
 ):
     user = store.get_by_id(user_id)
     if not user:
