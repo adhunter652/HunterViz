@@ -6,7 +6,7 @@ from app.core.domain.value_objects import Email, UserId
 
 class FirestoreUserStore(UserRepository):
     def __init__(self, collection_name: str = "users"):
-        self.client = firestore.Client()
+        self.client = firestore.Client(database="hunterviz-db")
         self.collection = self.client.collection(collection_name)
 
     def get_by_id(self, user_id: UserId) -> Optional[dict]:
