@@ -4,7 +4,7 @@ from google.cloud import firestore
 
 class FirestoreUserStore:
     def __init__(self, collection_name: str = "users"):
-        self.client = firestore.Client(database="hunterviz-db")
+        self.client = firestore.Client(database="hunterviz-db-native")
         self.collection = self.client.collection(collection_name)
 
     def list_users(self) -> List[dict]:
