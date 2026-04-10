@@ -1,8 +1,11 @@
 """Firestore-backed UserRepository implementation."""
 from typing import Optional
+
 from google.cloud import firestore
+
 from app.core.application.ports import UserRepository
 from app.core.domain.value_objects import Email, UserId
+
 
 class FirestoreUserStore(UserRepository):
     def __init__(self, collection_name: str = "users"):
@@ -24,18 +27,11 @@ class FirestoreUserStore(UserRepository):
         for doc in query:
             user = doc.to_dict()
             user["id"] = doc.id
-            if "password_hash" in user:
-                del user["password_hash"]
             return user
         return None
 
     def get_by_email_with_password(self, email: Email) -> Optional[dict]:
-        query = self.collection.where("email", "==", str(email)).limit(1).stream()
-        for doc in query:
-            user = doc.to_dict()
-            user["id"] = doc.id
-            return user
-        return None
+        return self.get_by_email(email)
 
     def save(self, user: dict) -> None:
         user_id = user.get("id")

@@ -31,3 +31,5 @@ class FirestoreUserStore:
         if not user_id:
             raise ValueError("User must have an 'id'")
         self.collection.document(user_id).set(user)
+
+
