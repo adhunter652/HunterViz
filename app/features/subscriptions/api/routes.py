@@ -110,12 +110,15 @@ def _send_contact_email(
 def get_auth_service(settings: Settings):
     from app.features.auth.application.auth_service import AuthService
     from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
-    repo = FirestoreUserStore()
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
+    user_repo = FirestoreUserStore()
+    company_repo = FirestoreCompanyStore()
     return AuthService(
-        user_repository=repo,
+        user_repository=user_repo,
         secret_key=settings.secret_key,
         access_token_expire_minutes=settings.access_token_expire_minutes,
         refresh_token_expire_days=settings.refresh_token_expire_days,
+        company_repository=company_repo,
     )
 
 

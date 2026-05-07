@@ -32,3 +32,25 @@ class SubscriptionRepository(ABC):
     def save(self, subscription: dict) -> None:
         """Create or update subscription."""
         ...
+
+
+class CompanyRepository(ABC):
+    @abstractmethod
+    def get_by_id(self, company_id: str) -> Optional[dict]:
+        """Return company dict (id, name, owner_id, members) or None."""
+        ...
+
+    @abstractmethod
+    def list_by_owner(self, owner_id: str) -> list[dict]:
+        """Return list of companies owned by user."""
+        ...
+
+    @abstractmethod
+    def list_by_member_email(self, email: str) -> list[dict]:
+        """Return list of companies where user is a member."""
+        ...
+
+    @abstractmethod
+    def save(self, company: dict) -> None:
+        """Create or update company."""
+        ...

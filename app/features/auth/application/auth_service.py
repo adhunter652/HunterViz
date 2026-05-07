@@ -58,11 +58,13 @@ class AuthService:
         secret_key: str,
         access_token_expire_minutes: int = 15,
         refresh_token_expire_days: int = 7,
+        company_repository: Optional[CompanyRepository] = None,
     ):
         self._repo = user_repository
         self._secret_key = secret_key
         self._access_expire = access_token_expire_minutes
         self._refresh_expire = refresh_token_expire_days
+        self._company_repo = company_repository
 
     def register(
         self,
@@ -88,6 +90,15 @@ class AuthService:
             "created_at": now.isoformat(),
         }
         self._repo.save(user_data)
+        
+        if self._company_repo:
+            self._company_repo.save({
+                "name": user_data["company_name"],
+                "owner_id": str(user_id),
+                "members": {},
+                "member_emails": []
+            })
+        
         return {
             "id": str(user_id),
             "email": email_val,
@@ -112,6 +123,14 @@ class AuthService:
             }
             self._repo.save(user_data)
             is_new = True
+            
+            if self._company_repo:
+                self._company_repo.save({
+                    "name": "My Company",
+                    "owner_id": str(user_id),
+                    "members": {},
+                    "member_emails": []
+                })
         
         user_id = user_data["id"]
         access = create_access_token(user_id, self._secret_key, self._access_expire)

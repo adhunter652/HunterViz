@@ -33,12 +33,15 @@ class RegisterBody(BaseModel):
 
 def get_auth_service(settings: Settings) -> AuthService:
     from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
-    repo = FirestoreUserStore()
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
+    user_repo = FirestoreUserStore()
+    company_repo = FirestoreCompanyStore()
     return AuthService(
-        user_repository=repo,
+        user_repository=user_repo,
         secret_key=settings.secret_key,
         access_token_expire_minutes=settings.access_token_expire_minutes,
         refresh_token_expire_days=settings.refresh_token_expire_days,
+        company_repository=company_repo,
     )
 
 
@@ -273,25 +276,68 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
     if not user_id:
         return RedirectResponse(url="/app/login", status_code=302)
     from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
     from app.features.subscriptions.infrastructure.subscription_store import JsonSubscriptionStore
 
     user_store = FirestoreUserStore()
+    company_store = FirestoreCompanyStore()
     sub_store = JsonSubscriptionStore(config.subscription_store_path)
+    
     user = user_store.get_by_id(UserId(user_id))
     if not user:
         return RedirectResponse(url="/app/login", status_code=302)
+    
     sub = sub_store.get_active_by_user_id(UserId(user_id))
-    company_name = user.get("company_name") or "My Company"
-    dashboards = user.get("dashboards") or []
+    primary_company_name = user.get("company_name") or "My Company"
+    user_email = user.get("email")
+    
+    # 1. Collect all dashboards (owned + shared)
+    all_dashboards = []
+    
+    # Owned dashboards
+    owned_dashboards = user.get("dashboards") or []
+    for d in owned_dashboards:
+        d_copy = d.copy()
+        if not d_copy.get("company_name"):
+            d_copy["company_name"] = primary_company_name
+        all_dashboards.append(d_copy)
+        
+    # Shared dashboards (from other companies)
+    member_companies = company_store.list_by_member_email(user_email)
+    for c in member_companies:
+        owner_id = c.get("owner_id")
+        if owner_id == user_id: continue # Already handled
+        
+        owner_doc = user_store.get_by_id(UserId(owner_id))
+        if not owner_doc: continue
+        
+        owner_dashboards = owner_doc.get("dashboards") or []
+        allowed_ids = c.get("members", {}).get(user_email, {}).get("report_ids", [])
+        
+        for d in owner_dashboards:
+            if "all" in allowed_ids or d.get("id") in allowed_ids:
+                d_copy = d.copy()
+                d_copy["company_id"] = c.get("id")
+                d_copy["company_name"] = c.get("name")
+                d_copy["is_shared"] = True
+                all_dashboards.append(d_copy)
+
+    # 2. Companies for the filter dropdown & ownership info
+    owned_companies = company_store.list_by_owner(user_id)
+    # Ensure every user has at least one company (if none found, we might need to create it, but register/login handles it now)
+    
     return HTMLResponse(
         render_template(
             "auth",
             "dashboard",
             {
                 "app_name": config.app_name,
-                "company_name": company_name,
+                "company_name": primary_company_name,
                 "subscribed": sub is not None,
-                "dashboards": dashboards,
+                "dashboards": all_dashboards,
+                "owned_companies": owned_companies,
+                "member_companies": member_companies,
+                "user_email": user_email,
             },
         )
     )
@@ -300,6 +346,145 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
 class ShareDashboardBody(BaseModel):
     dashboard_id: str
     email: EmailStr
+
+
+class InviteMemberBody(BaseModel):
+    email: EmailStr
+    report_ids: list[str] # ["all"] or specific IDs
+
+
+def _send_invite_email(config: Settings, company_name: str, target_email: str):
+    """Send an invitation email to the user."""
+    url = "https://app.hunterviz.com"
+    text = f"""
+    You've been invited to view reports for {company_name} on HunterViz.
+    
+    Click the button below to access your dashboard:
+    {url}
+    
+    If you don't have an account yet, please sign up with this email address.
+    """
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="color: #0f172a;">You've been invited!</h2>
+        <p style="color: #475569; font-size: 16px; line-height: 1.5;">
+            You've been invited to view reports for <strong>{company_name}</strong> on HunterViz.
+        </p>
+        <div style="margin: 30px 0;">
+            <a href="{url}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+                Go to Dashboard
+            </a>
+        </div>
+        <p style="color: #94a3b8; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser: <br>
+            <a href="{url}" style="color: #2563eb;">{url}</a>
+        </p>
+    </div>
+    """
+    
+    if config.smtp_host and config.smtp_user and config.smtp_password:
+        from_addr = config.smtp_from or config.smtp_user
+        from email.mime.multipart import MIMEMultipart
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"Invitation to view {company_name} reports"
+        msg["From"] = from_addr
+        msg["To"] = target_email
+        
+        msg.attach(MIMEText(text, "plain"))
+        msg.attach(MIMEText(html, "html"))
+        
+        with smtplib.SMTP(config.smtp_host, config.smtp_port) as smtp:
+            smtp.starttls()
+            smtp.login(config.smtp_user, config.smtp_password)
+            smtp.sendmail(from_addr, [target_email], msg.as_string())
+
+
+@router.get("/companies/{company_id}/members")
+async def list_company_members(
+    company_id: str,
+    user_id: UserId = Depends(get_current_user_id),
+    config: Settings = Depends(get_config)
+):
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
+    store = FirestoreCompanyStore()
+    company = store.get_by_id(company_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    if company.get("owner_id") != str(user_id):
+        raise HTTPException(status_code=403, detail="Only the owner can manage members")
+        
+    return {"members": company.get("members") or {}}
+
+
+@router.post("/companies/{company_id}/invite")
+async def invite_company_member(
+    company_id: str,
+    body: InviteMemberBody,
+    user_id: UserId = Depends(get_current_user_id),
+    config: Settings = Depends(get_config)
+):
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
+    from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
+    company_store = FirestoreCompanyStore()
+    user_store = FirestoreUserStore()
+    
+    company = company_store.get_by_id(company_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    if company.get("owner_id") != str(user_id):
+        raise HTTPException(status_code=403, detail="Only the owner can manage members")
+    
+    members = company.get("members") or {}
+    is_new = body.email not in members
+    members[body.email] = {"report_ids": body.report_ids}
+    company["members"] = members
+    company_store.save(company)
+    
+    # Underlying Looker Studio sharing
+    owner_doc = user_store.get_by_id(user_id)
+    dashboards = owner_doc.get("dashboards") or []
+    
+    for d in dashboards:
+        if "all" in body.report_ids or d.get("id") in body.report_ids:
+            link = d.get("link")
+            if link and ("lookerstudio.google.com" in link or "datastudio.google.com" in link):
+                file_id = extract_file_id(link)
+                if file_id:
+                    share_report(file_id, body.email)
+    
+    # Send email
+    try:
+        _send_invite_email(config, company.get("name", "HunterViz"), body.email)
+    except Exception as e:
+        print(f"Failed to send invite email: {e}")
+        
+    return {"ok": True, "message": "User invited successfully"}
+
+
+@router.delete("/companies/{company_id}/members/{email}")
+async def remove_company_member(
+    company_id: str,
+    email: str,
+    user_id: UserId = Depends(get_current_user_id),
+):
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
+    store = FirestoreCompanyStore()
+    company = store.get_by_id(company_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    if company.get("owner_id") != str(user_id):
+        raise HTTPException(status_code=403, detail="Only the owner can manage members")
+        
+    members = company.get("members") or {}
+    if email in members:
+        del members[email]
+        company["members"] = members
+        store.save(company)
+        
+    return {"ok": True}
 
 
 @router.post("/share-dashboard")

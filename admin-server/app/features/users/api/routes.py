@@ -14,6 +14,11 @@ def get_user_store() -> FirestoreUserStore:
     return FirestoreUserStore()
 
 
+def get_company_store():
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
+    return FirestoreCompanyStore()
+
+
 # --- Pages ---
 
 
@@ -38,6 +43,7 @@ def edit_user_page(
     request: Request,
     user_id: str,
     store: FirestoreUserStore = Depends(get_user_store),
+    company_store = Depends(get_company_store),
     settings: AdminSettings = Depends(get_settings),
 ):
     user = store.get_by_id(user_id)
@@ -46,6 +52,7 @@ def edit_user_page(
     
     safe_user = {k: v for k, v in user.items() if k != "password_hash"}
     dashboards = user.get("dashboards") or []
+    companies = company_store.list_by_owner(user_id)
     
     return HTMLResponse(
         render_template(
@@ -54,6 +61,7 @@ def edit_user_page(
                 "app_name": settings.app_name,
                 "user": safe_user,
                 "dashboards": dashboards,
+                "companies": companies,
             },
         )
     )
@@ -87,17 +95,28 @@ def add_dashboard(
     id: str = Form("", alias="dashboard_id"),
     link: str = Form("", alias="dashboard_link"),
     refresh_url: str = Form("", alias="refresh_url"),
+    company_id: str = Form("", alias="company_id"),
     store: FirestoreUserStore = Depends(get_user_store),
+    company_store = Depends(get_company_store),
 ):
     user = store.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+        
+    company_name = ""
+    if company_id:
+        company = company_store.get_by_id(company_id)
+        if company:
+            company_name = company.get("name")
+
     dashboards = list(user.get("dashboards") or [])
     dash_id = (id or "").strip() or f"dash-{len(dashboards) + 1}"
     dashboards.append({
         "id": dash_id, 
         "link": (link or "").strip(),
-        "refresh_url": (refresh_url or "").strip()
+        "refresh_url": (refresh_url or "").strip(),
+        "company_id": company_id,
+        "company_name": company_name
     })
     user["dashboards"] = dashboards
     store.save(user)
