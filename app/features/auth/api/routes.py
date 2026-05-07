@@ -87,6 +87,23 @@ def logout(config: Settings = Depends(get_config)):
     return response
 
 
+class RefreshDataBody(BaseModel):
+    dashboard_id: Optional[str] = None
+
+
+@router.post("/refresh-data")
+async def refresh_data(
+    body: Optional[RefreshDataBody] = None,
+    user_id: UserId = Depends(get_current_user_id),
+    config: Settings = Depends(get_config),
+):
+    """Trigger a data refresh for the user's dashboards."""
+    # Simulation: In a real app, this might trigger a Cloud Run job or a GCS sync.
+    import asyncio
+    await asyncio.sleep(2)  # Simulate work
+    return {"ok": True, "message": "Data refresh complete", "dashboard_id": body.dashboard_id if body else None}
+
+
 # --- App pages (HTML from feature templates) ---
 
 

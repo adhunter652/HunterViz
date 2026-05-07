@@ -67,6 +67,37 @@
       font-family: inherit;
     }
     .btn-logout:hover { color: var(--text); background: var(--accent-tint); }
+    .btn-refresh {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.875rem;
+      background: var(--surface);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-refresh:hover { border-color: var(--accent); background: var(--accent-tint); }
+    .btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(37, 99, 235, 0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .btn-refresh.loading .spinner { display: block; }
+    .btn-refresh.loading .icon-refresh { display: none; }
     main {
       flex: 1;
       padding: 2rem 1.5rem;
@@ -132,6 +163,21 @@
       font-weight: 600;
     }
     .btn-open:hover { background: var(--accent-hover); color: #fff; }
+    .btn-card-refresh {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-card-refresh:hover { color: var(--accent); border-color: var(--accent); }
+    .btn-card-refresh.loading .icon-refresh { animation: spin 0.8s linear infinite; color: var(--accent); }
     .footer {
       flex-shrink: 0;
       padding: 0.75rem 1.5rem;
@@ -150,6 +196,11 @@
     </a>
     <div class="header-actions">
       <h1 class="company">{{ company_name }}</h1>
+      <button type="button" class="btn-refresh" id="refresh-data" title="Refresh dashboards">
+        <svg class="icon-refresh" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+        <div class="spinner"></div>
+        <span>Refresh</span>
+      </button>
       <button type="button" class="btn-logout" id="logout">Log out</button>
     </div>
   </header>
@@ -170,8 +221,11 @@
           <div class="card-preview">
             <iframe src="{{ d.link or '#' }}" title="Dashboard preview" class="preview-iframe" loading="lazy"></iframe>
           </div>
-          <div class="card-footer">
+          <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
             <a href="{{ d.link or '#' }}" class="btn-open" target="_blank" rel="noopener">Open Dashboard</a>
+            <button type="button" class="btn-card-refresh" title="Refresh this dashboard" data-refresh-target="{{ d.id or '' }}">
+              <svg class="icon-refresh" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+            </button>
           </div>
         </div>
         {% endfor %}
@@ -186,9 +240,68 @@
   </footer>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+    
     document.getElementById('logout').addEventListener('click', function() {
       localStorage.removeItem('access_token');
       window.location.href = '/';
+    });
+
+    const refreshBtn = document.getElementById('refresh-data');
+    refreshBtn.addEventListener('click', async function() {
+      if (refreshBtn.classList.contains('loading')) return;
+      
+      refreshBtn.classList.add('loading');
+      refreshBtn.disabled = true;
+      
+      try {
+        const response = await fetch('/api/v1/auth/refresh-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          console.error('Refresh failed');
+        }
+      } catch (err) {
+        console.error('Error refreshing data:', err);
+      } finally {
+        refreshBtn.classList.remove('loading');
+        refreshBtn.disabled = false;
+      }
+    });
+
+    // Handle per-card refresh buttons
+    document.querySelectorAll('.btn-card-refresh').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        if (btn.classList.contains('loading')) return;
+        btn.classList.add('loading');
+        
+        try {
+          const response = await fetch('/api/v1/auth/refresh-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dashboard_id: btn.dataset.refreshTarget })
+          });
+          if (response.ok) {
+            // Success: maybe reload the iframe
+            const card = btn.closest('.dashboard-card');
+            const iframe = card.querySelector('.preview-iframe');
+            if (iframe) {
+              const src = iframe.src;
+              iframe.src = '';
+              iframe.src = src;
+            }
+          }
+        } catch (err) {
+          console.error('Card refresh failed', err);
+        } finally {
+          btn.classList.remove('loading');
+        }
+      });
     });
   </script>
 </body>
