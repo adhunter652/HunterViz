@@ -42,18 +42,10 @@ def edit_user_page(
     user = store.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return HTMLResponse(
-        render_template(
-            "edit_user",
-            {
-                "app_name": settings.app_name,
-                "user": safe_user,
-                "dashboards": dashboards,
-            },
-        )
-    )
+    
     safe_user = {k: v for k, v in user.items() if k != "password_hash"}
     dashboards = user.get("dashboards") or []
+    
     return HTMLResponse(
         render_template(
             "edit_user",
