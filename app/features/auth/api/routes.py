@@ -1,4 +1,5 @@
 """POST login, register, refresh; serve sign-in/sign-up and dashboard pages from templates."""
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr, Field
