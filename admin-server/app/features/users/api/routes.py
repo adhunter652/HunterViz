@@ -66,7 +66,6 @@ def update_user(
     user_id: str,
     email: str = Form(..., alias="email"),
     company_name: str = Form("", alias="company_name"),
-    refresh_url: str = Form("", alias="refresh_url"),
     store: FirestoreUserStore = Depends(get_user_store),
 ):
     user = store.get_by_id(user_id)
@@ -74,7 +73,6 @@ def update_user(
         raise HTTPException(status_code=404, detail="User not found")
     user["email"] = email.strip()
     user["company_name"] = (company_name or "").strip()
-    user["refresh_url"] = (refresh_url or "").strip()
     store.save(user)
     return RedirectResponse(url=f"/users/{user_id}", status_code=303)
 
@@ -87,6 +85,7 @@ def add_dashboard(
     user_id: str,
     id: str = Form("", alias="dashboard_id"),
     link: str = Form("", alias="dashboard_link"),
+    refresh_url: str = Form("", alias="refresh_url"),
     store: FirestoreUserStore = Depends(get_user_store),
 ):
     user = store.get_by_id(user_id)
@@ -94,7 +93,11 @@ def add_dashboard(
         raise HTTPException(status_code=404, detail="User not found")
     dashboards = list(user.get("dashboards") or [])
     dash_id = (id or "").strip() or f"dash-{len(dashboards) + 1}"
-    dashboards.append({"id": dash_id, "link": (link or "").strip()})
+    dashboards.append({
+        "id": dash_id, 
+        "link": (link or "").strip(),
+        "refresh_url": (refresh_url or "").strip()
+    })
     user["dashboards"] = dashboards
     store.save(user)
     return RedirectResponse(url=f"/users/{user_id}#dashboards", status_code=303)

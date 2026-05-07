@@ -88,10 +88,6 @@
           <label for="company_name">Company name</label>
           <input type="text" id="company_name" name="company_name" value="{{ user.company_name or '' }}">
         </div>
-        <div class="form-group">
-          <label for="refresh_url">Refresh URL</label>
-          <input type="url" id="refresh_url" name="refresh_url" value="{{ user.refresh_url or '' }}" placeholder="https://...">
-        </div>
         <button type="submit" class="btn btn-primary">Save</button>
       </form>
     </div>
@@ -102,7 +98,13 @@
       <ul class="dashboards-list">
         {% for d in dashboards %}
         <li>
-          <span><strong>{{ d.id or '—' }}</strong> <a href="{{ d.link or '#' }}" target="_blank" rel="noopener">{{ d.link or '—' }}</a></span>
+          <span>
+            <strong>{{ d.id or '—' }}</strong> 
+            <a href="{{ d.link or '#' }}" target="_blank" rel="noopener">{{ d.link or '—' }}</a>
+            {% if d.refresh_url %}
+            <br><small style="color: var(--text-muted)">Refresh URL: {{ d.refresh_url }}</small>
+            {% endif %}
+          </span>
           <form action="/users/{{ user.id }}/dashboards/remove" method="post" style="display:inline;">
             <input type="hidden" name="dashboard_index" value="{{ loop.index0 }}">
             <button type="submit" class="btn btn-danger">Remove</button>
@@ -121,6 +123,10 @@
         <div class="form-group">
           <label for="dashboard_link">Link (URL)</label>
           <input type="url" id="dashboard_link" name="dashboard_link" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label for="dashboard_refresh_url">Refresh URL (Optional)</label>
+          <input type="url" id="dashboard_refresh_url" name="refresh_url" placeholder="https://...">
         </div>
         <button type="submit" class="btn btn-primary">Add dashboard</button>
       </form>

@@ -103,22 +103,34 @@ async def refresh_data(
     store = FirestoreUserStore()
     user = store.get_by_id(user_id)
     
-    refresh_url = user.get("refresh_url") if user else None
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    dashboards = user.get("dashboards") or []
+    refresh_url = None
+    
+    if body and body.dashboard_id:
+        # Find the specific dashboard and its refresh URL
+        for d in dashboards:
+            if d.get("id") == body.dashboard_id:
+                refresh_url = d.get("refresh_url")
+                break
+    elif dashboards:
+        # If no specific ID, maybe they want to refresh all? 
+        # For now, we'll just check if the first one has a URL as a fallback.
+        refresh_url = dashboards[0].get("refresh_url")
     
     if refresh_url:
-        # If the user has a custom refresh URL, we call it.
-        # We use a simple simulation of the call here, but in production 
-        # you would use httpx.post(refresh_url, json=...)
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Triggering external refresh for user {user_id} at {refresh_url}")
+        logger.info(f"Triggering dashboard refresh for user {user_id} at {refresh_url} (dashboard: {body.dashboard_id if body else 'default'})")
         
         # Simulation of external call
         import asyncio
         await asyncio.sleep(1.5)
-        return {"ok": True, "message": f"External refresh triggered at {refresh_url}"}
+        return {"ok": True, "message": f"Refresh triggered at {refresh_url}"}
 
-    # Simulation: In a real app, this might trigger a Cloud Run job or a GCS sync.
+    # Simulation: Fallback if no specific URL is found.
     import asyncio
     await asyncio.sleep(2)  # Simulate work
     return {"ok": True, "message": "Data refresh complete (simulation)", "dashboard_id": body.dashboard_id if body else None}
