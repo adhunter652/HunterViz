@@ -9,6 +9,7 @@ from app.core.config import Settings
 from app.core.domain.value_objects import UserId
 from app.core.infrastructure.templating import render_template
 from app.features.auth.application.auth_service import AuthService
+from app.core.infrastructure.google_drive import share_report, extract_file_id
 
 from starlette.requests import Request as StarletteRequest
 from authlib.integrations.starlette_client import OAuth
@@ -265,3 +266,42 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
             },
         )
     )
+
+
+class ShareDashboardBody(BaseModel):
+    dashboard_id: str
+    email: EmailStr
+
+
+@router.post("/share-dashboard")
+async def share_dashboard(
+    body: ShareDashboardBody,
+    user_id: UserId = Depends(get_current_user_id),
+    config: Settings = Depends(get_config)
+):
+    from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
+    store = FirestoreUserStore()
+    user = store.get_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    dashboards = user.get("dashboards") or []
+    target_dash = next((d for d in dashboards if d.get("id") == body.dashboard_id), None)
+    
+    if not target_dash:
+        raise HTTPException(status_code=404, detail="Dashboard not found in your account")
+        
+    link = target_dash.get("link")
+    if not link or ("lookerstudio.google.com" not in link and "datastudio.google.com" not in link):
+        raise HTTPException(status_code=400, detail="Only Looker Studio dashboards can be shared via this tool.")
+        
+    file_id = extract_file_id(link)
+    if not file_id:
+        raise HTTPException(status_code=400, detail="Could not identify the report ID from the dashboard link.")
+        
+    success, message = share_report(file_id, body.email)
+    
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+        
+    return {"ok": True, "message": message}

@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.core.config import AdminSettings, get_settings
 from app.core.infrastructure.templating import render_template
 from app.features.users.firestore_store import FirestoreUserStore
+from app.core.infrastructure.google_drive import share_report, extract_file_id
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -100,6 +101,13 @@ def add_dashboard(
     })
     user["dashboards"] = dashboards
     store.save(user)
+
+    # Automatic sharing for Looker Studio
+    if link and ("lookerstudio.google.com" in link or "datastudio.google.com" in link):
+        file_id = extract_file_id(link)
+        if file_id and user.get("email"):
+            share_report(file_id, user["email"])
+
     return RedirectResponse(url=f"/users/{user_id}#dashboards", status_code=303)
 
 
