@@ -5,6 +5,7 @@ import threading
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
+from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 from app.core.api.middleware import setup_middleware
 from app.core.config import get_settings
@@ -16,8 +17,10 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="1.0.0")
 
-# Mount static files for favicon and assets
-app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
+# Mount static files for favicon and assets if directory exists
+assets_dir = Path("static/assets")
+if assets_dir.exists():
+    app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
 
 def _do_initial_sync() -> None:
