@@ -214,6 +214,50 @@
                     #e2e8f0 100%
                 );
             }
+            .google-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.75rem;
+                width: 100%;
+                padding: 0.75rem;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                color: var(--text);
+                font-size: 0.9375rem;
+                font-weight: 500;
+                text-decoration: none;
+                margin-bottom: 1.5rem;
+                transition: background 0.2s;
+            }
+            .google-btn:hover {
+                background: #f1f5f9;
+            }
+            .google-btn img {
+                width: 20px;
+                height: 20px;
+            }
+            .divider {
+                display: flex;
+                align-items: center;
+                text-align: center;
+                margin: 1.5rem 0;
+                color: var(--text-muted);
+                font-size: 0.8125rem;
+            }
+            .divider::before,
+            .divider::after {
+                content: "";
+                flex: 1;
+                border-bottom: 1px solid var(--border);
+            }
+            .divider:not(:empty)::before {
+                margin-right: 1rem;
+            }
+            .divider:not(:empty)::after {
+                margin-left: 1rem;
+            }
         </style>
     </head>
     <body>
@@ -238,6 +282,11 @@
                     />
                 </a>
                 <h1>Sign Up</h1>
+                <a href="/api/v1/auth/google/login" class="google-btn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+                    Sign up with Google
+                </a>
+                <div class="divider">or</div>
                 <div id="error" class="error" style="display: none"></div>
                 <form id="form">
                     <label for="email">Email</label>

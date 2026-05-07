@@ -1,6 +1,6 @@
 """POST login, register, refresh; serve sign-in/sign-up and dashboard pages from templates."""
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr, Field
 
@@ -10,8 +10,13 @@ from app.core.domain.value_objects import UserId
 from app.core.infrastructure.templating import render_template
 from app.features.auth.application.auth_service import AuthService
 
+from starlette.requests import Request as StarletteRequest
+from authlib.integrations.starlette_client import OAuth
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 pages_router = APIRouter(tags=["auth-views"])
+
+oauth = OAuth()
 
 
 class LoginBody(BaseModel):
@@ -136,6 +141,71 @@ async def refresh_data(
     return {"ok": True, "message": "Data refresh complete (simulation)", "dashboard_id": body.dashboard_id if body else None}
 
 
+# --- Google OAuth ---
+
+@router.get("/google/login")
+async def google_login(request: Request, config: Settings = Depends(get_config)):
+    if not config.google_client_id or not config.google_client_secret:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+    
+    oauth.register(
+        name='google',
+        client_id=config.google_client_id,
+        client_secret=config.google_client_secret,
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+        client_kwargs={'scope': 'openid email profile'}
+    )
+    
+    redirect_uri = request.url_for('google_callback')
+    # If running behind a proxy (like Cloud Run), ensure redirect_uri uses https
+    if config.is_production():
+        redirect_uri = str(redirect_uri).replace("http://", "https://")
+        
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+
+@router.get("/google/callback", name="google_callback")
+async def google_callback(request: Request, config: Settings = Depends(get_config)):
+    service = get_auth_service(config)
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"OAuth error: {str(e)}")
+        
+    user_info = token.get('userinfo')
+    if not user_info:
+        raise HTTPException(status_code=400, detail="No user info from Google")
+    
+    email = user_info.get('email')
+    data = service.get_or_create_google_user(email)
+    
+    response = RedirectResponse(url="/app/complete-profile" if data["is_new"] else "/app/")
+    response.set_cookie(
+        key="access_token",
+        value=data["access_token"],
+        path="/",
+        max_age=config.access_token_expire_minutes * 60,
+        samesite="lax",
+        httponly=True,
+        secure=config.get_cookie_secure(),
+    )
+    return response
+
+
+@router.post("/complete-profile")
+def complete_profile(
+    company_name: str = Form(..., alias="company_name"),
+    user_id: UserId = Depends(get_current_user_id),
+    config: Settings = Depends(get_config)
+):
+    service = get_auth_service(config)
+    try:
+        service.update_company_name(user_id, company_name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return RedirectResponse(url="/app/", status_code=303)
+
+
 # --- App pages (HTML from feature templates) ---
 
 
@@ -147,6 +217,11 @@ def login_page(config: Settings = Depends(get_config)):
 @pages_router.get("/signup", response_class=HTMLResponse)
 def signup_page(config: Settings = Depends(get_config)):
     return HTMLResponse(render_template("auth", "signup", {"app_name": config.app_name}))
+
+
+@pages_router.get("/complete-profile", response_class=HTMLResponse)
+def complete_profile_page(config: Settings = Depends(get_config)):
+    return HTMLResponse(render_template("auth", "complete_profile", {"app_name": config.app_name}))
 
 
 @pages_router.get("", response_class=HTMLResponse)

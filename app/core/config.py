@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     smtp_password: Optional[str] = None
     smtp_from: Optional[str] = None  # From address; defaults to smtp_user
 
+    # Google OAuth
+    google_client_id: Optional[str] = None
+    google_client_secret: Optional[str] = None
+
     def ensure_data_dirs(self) -> None:
         Path(self.user_store_path).parent.mkdir(parents=True, exist_ok=True)
         Path(self.subscription_store_path).parent.mkdir(parents=True, exist_ok=True)

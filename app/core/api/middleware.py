@@ -3,6 +3,7 @@ import time
 import uuid
 from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import JSONResponse
 
 from app.core.config import get_settings
@@ -71,6 +72,11 @@ def setup_middleware(app: FastAPI, allowed_origins: list[str] | None = None) -> 
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=get_settings().secret_key,
     )
 
     @app.middleware("http")

@@ -94,6 +94,48 @@ class AuthService:
             "company_name": user_data["company_name"],
         }
 
+    def get_or_create_google_user(self, email: str) -> dict:
+        email_val = Email(email.strip().lower())
+        user_data = self._repo.get_by_email(email_val)
+        is_new = False
+        if not user_data:
+            user_id = UserId(str(uuid.uuid4()))
+            now = datetime.now(timezone.utc)
+            user_data = {
+                "id": str(user_id),
+                "email": email_val,
+                "password_hash": None,  # No password for Google users
+                "company_name": "",  # To be filled later
+                "stripe_customer_id": None,
+                "created_at": now.isoformat(),
+                "auth_provider": "google",
+            }
+            self._repo.save(user_data)
+            is_new = True
+        
+        user_id = user_data["id"]
+        access = create_access_token(user_id, self._secret_key, self._access_expire)
+        refresh = create_refresh_token(user_id, self._secret_key, self._refresh_expire)
+        
+        return {
+            "access_token": access,
+            "refresh_token": refresh,
+            "token_type": "bearer",
+            "is_new": is_new or not user_data.get("company_name"),
+            "user": {
+                "id": user_id,
+                "email": user_data["email"],
+                "company_name": user_data.get("company_name") or "",
+            },
+        }
+
+    def update_company_name(self, user_id: UserId, company_name: str) -> None:
+        user_data = self._repo.get_by_id(user_id)
+        if not user_data:
+            raise ValueError("User not found")
+        user_data["company_name"] = company_name.strip()
+        self._repo.save(user_data)
+
     def login(self, email: str, password: str) -> dict:
         email_val = Email(email.strip().lower())
         user_data = self._repo.get_by_email(email_val)
