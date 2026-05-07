@@ -7,7 +7,7 @@ import jwt
 from passlib.context import CryptContext
 
 from app.core.domain.value_objects import Email, UserId
-from app.core.application.ports import UserRepository
+from app.core.application.ports import UserRepository, CompanyRepository
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
