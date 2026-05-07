@@ -5,6 +5,7 @@ import threading
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
+from fastapi.staticfiles import StaticFiles
 from app.core.api.middleware import setup_middleware
 from app.core.config import get_settings
 from app.core.infrastructure.gcs_sync import start_background_sync, sync_from_bucket
@@ -14,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="1.0.0")
+
+# Mount static files for favicon and assets
+app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
 
 
 def _do_initial_sync() -> None:
