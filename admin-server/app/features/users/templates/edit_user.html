@@ -88,6 +88,10 @@
           <label for="company_name">Company name</label>
           <input type="text" id="company_name" name="company_name" value="{{ user.company_name or '' }}">
         </div>
+        <div class="form-group">
+          <label for="refresh_url">Refresh URL</label>
+          <input type="url" id="refresh_url" name="refresh_url" value="{{ user.refresh_url or '' }}" placeholder="https://...">
+        </div>
         <button type="submit" class="btn btn-primary">Save</button>
       </form>
     </div>

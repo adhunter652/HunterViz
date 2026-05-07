@@ -66,6 +66,7 @@ def update_user(
     user_id: str,
     email: str = Form(..., alias="email"),
     company_name: str = Form("", alias="company_name"),
+    refresh_url: str = Form("", alias="refresh_url"),
     store: FirestoreUserStore = Depends(get_user_store),
 ):
     user = store.get_by_id(user_id)
@@ -73,6 +74,7 @@ def update_user(
         raise HTTPException(status_code=404, detail="User not found")
     user["email"] = email.strip()
     user["company_name"] = (company_name or "").strip()
+    user["refresh_url"] = (refresh_url or "").strip()
     store.save(user)
     return RedirectResponse(url=f"/users/{user_id}", status_code=303)
 

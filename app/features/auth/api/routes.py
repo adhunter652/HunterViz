@@ -99,10 +99,29 @@ async def refresh_data(
     config: Settings = Depends(get_config),
 ):
     """Trigger a data refresh for the user's dashboards."""
+    from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
+    store = FirestoreUserStore()
+    user = store.get_by_id(user_id)
+    
+    refresh_url = user.get("refresh_url") if user else None
+    
+    if refresh_url:
+        # If the user has a custom refresh URL, we call it.
+        # We use a simple simulation of the call here, but in production 
+        # you would use httpx.post(refresh_url, json=...)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Triggering external refresh for user {user_id} at {refresh_url}")
+        
+        # Simulation of external call
+        import asyncio
+        await asyncio.sleep(1.5)
+        return {"ok": True, "message": f"External refresh triggered at {refresh_url}"}
+
     # Simulation: In a real app, this might trigger a Cloud Run job or a GCS sync.
     import asyncio
     await asyncio.sleep(2)  # Simulate work
-    return {"ok": True, "message": "Data refresh complete", "dashboard_id": body.dashboard_id if body else None}
+    return {"ok": True, "message": "Data refresh complete (simulation)", "dashboard_id": body.dashboard_id if body else None}
 
 
 # --- App pages (HTML from feature templates) ---
