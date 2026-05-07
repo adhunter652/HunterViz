@@ -98,13 +98,18 @@ class RefreshDataBody(BaseModel):
     dashboard_id: Optional[str] = None
 
 
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+import json
+import httpx
+
+
 @router.post("/refresh-data")
 async def refresh_data(
     body: Optional[RefreshDataBody] = None,
     user_id: UserId = Depends(get_current_user_id),
     config: Settings = Depends(get_config),
 ):
-    """Trigger a data refresh for the user's dashboards."""
+    """Trigger a data refresh and stream progress updates."""
     from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
     store = FirestoreUserStore()
     user = store.get_by_id(user_id)
@@ -116,30 +121,54 @@ async def refresh_data(
     refresh_url = None
     
     if body and body.dashboard_id:
-        # Find the specific dashboard and its refresh URL
         for d in dashboards:
             if d.get("id") == body.dashboard_id:
                 refresh_url = d.get("refresh_url")
                 break
     elif dashboards:
-        # If no specific ID, maybe they want to refresh all? 
-        # For now, we'll just check if the first one has a URL as a fallback.
         refresh_url = dashboards[0].get("refresh_url")
-    
-    if refresh_url:
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"Triggering dashboard refresh for user {user_id} at {refresh_url} (dashboard: {body.dashboard_id if body else 'default'})")
-        
-        # Simulation of external call
-        import asyncio
-        await asyncio.sleep(1.5)
-        return {"ok": True, "message": f"Refresh triggered at {refresh_url}"}
 
-    # Simulation: Fallback if no specific URL is found.
-    import asyncio
-    await asyncio.sleep(2)  # Simulate work
-    return {"ok": True, "message": "Data refresh complete (simulation)", "dashboard_id": body.dashboard_id if body else None}
+    async def event_generator():
+        yield json.dumps({"status": "starting", "message": "Starting data refresh..."}) + "\n"
+        
+        # Give the "safe to navigate away" message early
+        yield json.dumps({
+            "status": "info", 
+            "message": "This process usually takes several minutes. You can safely navigate away or close this tab; your data will update in the background."
+        }) + "\n"
+
+        if not refresh_url:
+            # Fallback/Demo mode
+            import asyncio
+            await asyncio.sleep(2)
+            yield json.dumps({"status": "progress", "message": "Fetching latest records..."}) + "\n"
+            await asyncio.sleep(3)
+            yield json.dumps({"status": "progress", "message": "Processing transformations..."}) + "\n"
+            await asyncio.sleep(2)
+            yield json.dumps({"status": "complete", "message": "Refresh complete!"}) + "\n"
+            return
+
+        # Real call to the pipeline
+        try:
+            yield json.dumps({"status": "triggering", "message": f"Triggering pipeline at {refresh_url}..."}) + "\n"
+            
+            async with httpx.AsyncClient() as client:
+                # Use a long timeout for the pipeline call
+                # Note: If the pipeline itself takes 10 mins, we might want to just trigger it 
+                # and return "Started", but here we'll try to wait for it if possible.
+                response = await client.post(refresh_url, timeout=300.0) 
+                
+                if response.status_code == 200:
+                    yield json.dumps({"status": "complete", "message": "Pipeline finished successfully!"}) + "\n"
+                else:
+                    yield json.dumps({
+                        "status": "error", 
+                        "message": f"Pipeline returned error {response.status_code}: {response.text[:100]}"
+                    }) + "\n"
+        except Exception as e:
+            yield json.dumps({"status": "error", "message": f"Failed to trigger refresh: {str(e)}"}) + "\n"
+
+    return StreamingResponse(event_generator(), media_type="application/x-ndjson")
 
 
 # --- Google OAuth ---
