@@ -103,30 +103,6 @@
       padding: 2rem 1.5rem;
       background: var(--bg);
     }
-    .warning-box {
-      background: rgba(251, 191, 36, 0.15);
-      border: 1px solid rgba(251, 191, 36, 0.4);
-      border-radius: 10px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      text-align: center;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .warning-box h2 { margin: 0 0 0.5rem 0; color: #b45309; font-size: 1.25rem; font-weight: 600; }
-    .warning-box p { margin: 0 0 1rem 0; color: var(--text-muted); }
-    .btn-warning {
-      display: inline-block;
-      padding: 0.875rem 1.75rem;
-      background: var(--accent);
-      color: #fff;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1rem;
-    }
-    .btn-warning:hover { background: var(--accent-hover); color: #fff; }
     .dashboards-section { margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; }
     .section-title { margin: 0 0 1rem 0; font-size: 1.5rem; font-weight: 600; color: var(--text); }
     .no-dashboards { color: var(--text-muted); margin: 0; }
@@ -282,13 +258,6 @@
     </div>
   </header>
   <main>
-    {% if not subscribed %}
-    <div class="warning-box">
-      <h2>You are not subscribed</h2>
-      <p>Subscribe to access the full dashboard and analytics.</p>
-      <a href="/app/subscribe" class="btn-warning">Go to Subscribe</a>
-    </div>
-    {% endif %}
     <section class="dashboards-section">
       {% if dashboards %}
       <h2 class="section-title">Your dashboards</h2>

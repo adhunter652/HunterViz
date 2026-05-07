@@ -189,6 +189,14 @@
         <p class="subtitle">Tell us a bit about your needs. All fields are optional—we'll follow up either way.</p>
         <form id="contact-form" class="form">
           <div class="field">
+            <label for="full_name">Full name</label>
+            <input type="text" id="full_name" name="full_name" placeholder="John Doe" value="{{ full_name }}" required>
+          </div>
+          <div class="field">
+            <label for="email">Work email</label>
+            <input type="email" id="email" name="email" placeholder="john@company.com" value="{{ user_email }}" required>
+          </div>
+          <div class="field">
             <label for="company_size">Company size<span class="hint"> (Optional)</span></label>
             <input type="text" id="company_size" name="company_size" placeholder="e.g. 1–10, 11–50, 50+">
           </div>
@@ -227,6 +235,8 @@
       btn.disabled = true;
       btn.textContent = "Sending…";
       var payload = {
+        full_name: document.getElementById("full_name").value.trim(),
+        email: document.getElementById("email").value.trim(),
         company_size: document.getElementById("company_size").value.trim() || null,
         analytics_needs: document.getElementById("analytics_needs").value.trim() || null,
         primary_data_source: document.getElementById("primary_data_source").value.trim() || null,

@@ -52,3 +52,21 @@ def get_current_user_id(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return UserId(sub)
+
+
+def get_current_user_id_optional(
+    token: Annotated[Optional[str], Depends(_token_from_request)],
+    config: Annotated[Settings, Depends(get_config)],
+) -> Optional[UserId]:
+    """Same as get_current_user_id but returns None instead of raising if not authenticated."""
+    if not token:
+        return None
+    from app.core.infrastructure.jwt_utils import decode_token
+
+    payload = decode_token(token, config.secret_key)
+    if not payload:
+        return None
+    sub = payload.get("sub")
+    if not sub:
+        return None
+    return UserId(sub)

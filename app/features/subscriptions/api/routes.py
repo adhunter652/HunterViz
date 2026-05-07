@@ -26,6 +26,8 @@ pages_router = APIRouter(tags=["subscription-views"])
 
 
 class ContactFormBody(BaseModel):
+    full_name: str
+    email: str
     company_size: Optional[str] = None
     analytics_needs: Optional[str] = None
     primary_data_source: Optional[str] = None
@@ -66,6 +68,7 @@ def _send_contact_email(
     lines = [
         "Contact form submission",
         "",
+        f"Name: {body.full_name}",
         f"Business name: {user_company_name or '(not provided)'}",
         f"Email: {user_email or '(not provided)'}",
         "",
@@ -98,6 +101,7 @@ def _send_contact_email(
         record = body.model_dump()
         record["user_email"] = user_email
         record["user_company_name"] = user_company_name
+        record["full_name"] = body.full_name
         submissions.append(record)
         path.write_text(json.dumps(submissions, indent=2), encoding="utf-8")
         push_data_file(config, path)
@@ -115,17 +119,29 @@ def get_auth_service(settings: Settings):
     )
 
 
+from app.core.api.deps import get_config, get_current_user_id, get_current_user_id_optional
+
+
 @router.post("/contact")
 def submit_contact_form(
     body: ContactFormBody,
-    user_id: UserId = Depends(get_current_user_id),
+    user_id: Optional[UserId] = Depends(get_current_user_id_optional),
     config: Settings = Depends(get_config),
 ):
     """Accept contact sales form and email to contact_email (or store if SMTP not set)."""
-    auth = get_auth_service(config)
-    user = auth.get_user_by_id(user_id)
-    user_email = user.get("email") if user else None
-    user_company_name = user.get("company_name") if user else None
+    user_email = body.email
+    user_company_name = None
+
+    if user_id:
+        auth = get_auth_service(config)
+        user = auth.get_user_by_id(user_id)
+        if user:
+            # If logged in, we can still use the body email but maybe capture company from profile
+            user_company_name = user.get("company_name")
+
+    # If body has a name, use it; else use what we found in profile if any
+    full_name = body.full_name
+
     _send_contact_email(
         config, body,
         user_email=user_email,
@@ -157,7 +173,27 @@ def subscribe_page(config: Settings = Depends(get_config)):
 
 
 @pages_router.get("/contact", response_class=HTMLResponse)
-def contact_form_page(config: Settings = Depends(get_config)):
+def contact_form_page(
+    config: Settings = Depends(get_config),
+    user_id: Optional[UserId] = Depends(get_current_user_id_optional),
+):
+    user_email = ""
+    full_name = ""
+    if user_id:
+        auth = get_auth_service(config)
+        user = auth.get_user_by_id(user_id)
+        if user:
+            user_email = user.get("email") or ""
+            full_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
+
     return HTMLResponse(
-        render_template("subscriptions", "contact", {"app_name": config.app_name})
+        render_template(
+            "subscriptions",
+            "contact",
+            {
+                "app_name": config.app_name,
+                "user_email": user_email,
+                "full_name": full_name,
+            },
+        )
     )
