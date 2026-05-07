@@ -244,7 +244,39 @@ web-server/
 
 ---
 
-## 6. Per-Feature Display (Templates Folder)
+## 6. Multi-Tenancy & Dashboard Sharing (Companies)
+
+The application supports a multi-company structure where reports can be organized by company and shared with teams.
+
+### 6.1 Core Concepts
+
+- **Company**: A logical grouping of reports and members. A user can own multiple companies or be a member of many.
+- **Ownership**: The user who creates a company is its **Owner**. Only owners can invite members or manage access.
+- **Membership**: Users invited to a company. Access is granted to specific reports or "All Reports" within that company.
+- **Individual Sharing**: Reports can also be shared with users on a 1-to-1 basis via email, independent of any company structure.
+
+### 6.2 Data Model (Firestore)
+
+- **`companies` Collection**:
+  - `id`: Unique ID.
+  - `name`: Display name.
+  - `owner_id`: `UserId` of the creator.
+  - `members`: Map of `email -> { report_ids: ["all"] | ["id1", "id2"] }`.
+  - `member_emails`: List of emails (for querying).
+
+- **`dashboards` (nested in User profile)**:
+  - Added `company_id` and `company_name` to link dashboards to a specific company context.
+
+### 6.3 Security & Visibility
+
+- **Dashboard Aggregation**: When a user logs in, the backend aggregates:
+  1. Dashboards owned by the user.
+  2. Dashboards from companies where the user's email is in the `members` list.
+- **Looker Studio Integration**: Inviting a user to a company or sharing a report individually triggers a Google Drive API call to grant permissions to the underlying report file.
+
+---
+
+## 7. Per-Feature Display (Templates Folder)
 
 Each feature owns its own display. HTML for a feature lives in that feature's **templates/** folder (e.g. `features/auth/templates/`, `features/subscriptions/templates/`).
 

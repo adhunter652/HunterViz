@@ -35,15 +35,16 @@
     }
     .header {
       flex-shrink: 0;
-      height: 150px;
+      height: 70px;
       display: flex;
       justify-content: space-between;
-      align-items: start;
-      padding: 1rem 1.5rem;
-      background: linear-gradient(to bottom, #bfdbfe 0%, var(--bg) 100%);
+      align-items: center;
+      padding: 0 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       z-index: 100;
-      flex-wrap: wrap;
-      gap: 1rem;
+      position: sticky;
+      top: 0;
     }
     .logo-wrap {
       display: flex;
@@ -102,10 +103,10 @@
     .btn-refresh.loading .icon-refresh { display: none; }
     main {
       flex: 1;
-      padding: 2rem 1.5rem;
+      padding: 1.5rem;
       background: var(--bg);
     }
-    .dashboards-section { margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; }
+    .dashboards-section { margin-top: 0; max-width: 1400px; margin-left: auto; margin-right: auto; }
     .section-title { margin: 0 0 1rem 0; font-size: 1.5rem; font-weight: 600; color: var(--text); }
     .no-dashboards { color: var(--text-muted); margin: 0; }
     .dashboard-grid {
@@ -301,16 +302,36 @@
     }
     
     .company-selector {
-      padding: 0.4rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      padding: 0;
+      border: none;
+      border-radius: 0;
       font-family: inherit;
-      font-size: 0.875rem;
-      background: var(--surface);
-      color: var(--text);
+      font-size: inherit;
+      font-weight: inherit;
+      background: transparent;
+      color: inherit;
       cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 1.25rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right center;
+      background-size: 1rem;
     }
-    .company-selector:focus { outline: none; border-color: var(--accent); }
+    .company-selector:focus { outline: none; }
+    
+    .company-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text);
+    }
+    .company-container h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
     
     .invite-btn {
       background: var(--accent-tint);
@@ -334,31 +355,46 @@
       <img src="/assets/logo.png" alt="" class="logo-img">
       <img src="/assets/company-name.png" alt="{{ app_name }}" class="company-name-img">
     </a>
-    <div class="header-actions">
-      <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <select id="company-filter" class="company-selector">
-          <option value="all">All Companies</option>
-          {% for c in owned_companies %}
-          <option value="{{ c.id }}">{{ c.name }} (Owner)</option>
-          {% endfor %}
-          {% for c in member_companies %}
-          <option value="{{ c.id }}">{{ c.name }}</option>
-          {% endfor %}
-        </select>
-        
-        <h1 class="company" id="current-company-name">{{ company_name }}</h1>
+    <div class="header-actions" style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 1.5rem;">
+      <div class="company-container">
+        {% set total_companies = owned_companies|length + member_companies|length %}
+        {% if total_companies > 1 %}
+          <select id="company-filter" class="company-selector" style="font-size: 1.1rem; font-weight: 600;">
+            <option value="all">All Companies</option>
+            {% for c in owned_companies %}
+            <option value="{{ c.id }}">{{ c.name }} (Owner)</option>
+            {% endfor %}
+            {% for c in member_companies %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+          <h1 class="company" id="current-company-name" style="display: none;">{{ company_name }}</h1>
+        {% else %}
+          {% set single_company = owned_companies[0] if owned_companies else member_companies[0] %}
+          <h1 class="company" id="current-company-name" style="font-size: 1.1rem;" data-single-id="{{ single_company.id if single_company else 'owned' }}">{{ single_company.name if single_company else company_name }}</h1>
+          <select id="company-filter" style="display: none;">
+            <option value="{{ single_company.id if single_company else 'owned' }}"></option>
+          </select>
+        {% endif %}
         
         <button type="button" class="invite-btn" id="open-invite-modal" title="Invite users to this company">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
         </button>
       </div>
 
-      <button type="button" class="btn-refresh" id="refresh-data" title="Refresh dashboards">
-        <svg class="icon-refresh" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
-        <div class="spinner"></div>
-        <span>Refresh</span>
-      </button>
-      <button type="button" class="btn-logout" id="logout">Log out</button>
+      <div style="height: 24px; width: 1px; background: var(--border);"></div>
+
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <button type="button" class="btn-refresh" id="open-add-company" title="Create a new company" style="background: transparent; color: var(--text-muted); border: none; font-weight: 500;">
+          + New Company
+        </button>
+        <button type="button" class="btn-refresh" id="refresh-data" title="Refresh dashboards">
+          <svg class="icon-refresh" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+          <div class="spinner"></div>
+          <span>Refresh</span>
+        </button>
+        <button type="button" class="btn-logout" id="logout">Log out</button>
+      </div>
     </div>
   </header>
   
@@ -396,6 +432,9 @@
           <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
             <a href="{{ d.link or '#' }}" class="btn-open" target="_blank" rel="noopener">Open Dashboard</a>
             <div style="display: flex; align-items: center;">
+              <button type="button" class="btn-card-share" title="Share this report individually" data-dashboard-id="{{ d.id or '' }}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+              </button>
               <button type="button" class="btn-card-refresh" title="Refresh this dashboard" data-refresh-target="{{ d.id or '' }}">
                 <svg class="icon-refresh" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
               </button>
@@ -445,7 +484,40 @@
       </form>
     </div>
   </div>
-  <footer class="footer">
+  <!-- Individual Report Share Modal -->
+  <div id="share-modal" class="modal-overlay">
+    <div class="modal">
+      <h3>Share Report</h3>
+      <p>Enter the Google email address to share this specific report with.</p>
+      <form id="share-form">
+        <input type="hidden" id="share-dashboard-id">
+        <label for="share-email">Email Address</label>
+        <input type="email" id="share-email" placeholder="user@gmail.com" required>
+        <div id="share-status" class="share-status"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="share-cancel">Cancel</button>
+          <button type="submit" class="btn-share-confirm" id="share-confirm">Share</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Company Modal -->
+  <div id="add-company-modal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add New Company</h3>
+      <p>Create a new company to organize your reports and invite members.</p>
+      <form id="add-company-form">
+        <label for="new-company-name">Company Name</label>
+        <input type="text" id="new-company-name" placeholder="Acme Corp" required>
+        <div id="add-company-status" class="share-status"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="add-company-cancel">Cancel</button>
+          <button type="submit" class="btn-share-confirm" id="add-company-confirm">Create Company</button>
+        </div>
+      </form>
+    </div>
+  </div>
     <span>&copy; <span id="year"></span> {{ app_name }}. All rights reserved.</span>
   </footer>
   <script>
@@ -466,15 +538,18 @@
       const selectedId = companyFilter.value;
       
       // Update header company name and invite button visibility
-      const selectedOption = companyFilter.options[companyFilter.selectedIndex];
-      currentCompanyName.textContent = selectedOption.text.replace(' (Owner)', '');
+      if (companyFilter.style.display !== 'none') {
+        const selectedOption = companyFilter.options[companyFilter.selectedIndex];
+        currentCompanyName.textContent = selectedOption.text.replace(' (Owner)', '');
+      }
       
-      const isOwned = ownedCompanies.some(c => c.id === selectedId);
+      const companyIdToValidate = (companyFilter.style.display === 'none') ? currentCompanyName.dataset.singleId : selectedId;
+      const isOwned = ownedCompanies.some(c => c.id === companyIdToValidate);
       inviteBtn.style.display = isOwned ? 'flex' : 'none';
 
       // Filter cards
       dashboardCards.forEach(card => {
-        if (selectedId === 'all' || card.dataset.companyId === selectedId) {
+        if (selectedId === 'all' || card.dataset.companyId === selectedId || (companyFilter.style.display === 'none')) {
           card.style.display = 'flex';
         } else {
           card.style.display = 'none';
@@ -725,6 +800,122 @@
       } finally {
         inviteConfirm.disabled = false;
         inviteConfirm.textContent = 'Invite / Update';
+      }
+    });
+
+    // Individual Share Modal Logic
+    const shareModal = document.getElementById('share-modal');
+    const shareForm = document.getElementById('share-form');
+    const shareEmailInput = document.getElementById('share-email');
+    const shareStatus = document.getElementById('share-status');
+    const shareDashboardIdInput = document.getElementById('share-dashboard-id');
+    const shareCancel = document.getElementById('share-cancel');
+    const shareConfirm = document.getElementById('share-confirm');
+
+    document.querySelectorAll('.btn-card-share').forEach(btn => {
+      btn.addEventListener('click', () => {
+        shareDashboardIdInput.value = btn.dataset.dashboardId;
+        shareStatus.style.display = 'none';
+        shareEmailInput.value = '';
+        shareModal.classList.add('active');
+      });
+    });
+
+    shareCancel.addEventListener('click', () => shareModal.classList.remove('active'));
+    shareModal.addEventListener('click', (e) => { if (e.target === shareModal) shareModal.classList.remove('active'); });
+
+    shareForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      shareStatus.style.display = 'none';
+      shareConfirm.disabled = true;
+      shareConfirm.textContent = 'Sharing...';
+
+      try {
+        const response = await fetch('/api/v1/auth/share-dashboard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+          },
+          body: JSON.stringify({
+            dashboard_id: shareDashboardIdInput.value,
+            email: shareEmailInput.value
+          })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          shareStatus.textContent = data.message;
+          shareStatus.className = 'share-status success';
+          shareStatus.style.display = 'block';
+          setTimeout(() => shareModal.classList.remove('active'), 2000);
+        } else {
+          shareStatus.textContent = data.detail || 'Failed to share report';
+          shareStatus.className = 'share-status error';
+          shareStatus.style.display = 'block';
+        }
+      } catch (err) {
+        shareStatus.textContent = 'An error occurred. Please try again.';
+        shareStatus.className = 'share-status error';
+        shareStatus.style.display = 'block';
+      } finally {
+        shareConfirm.disabled = false;
+        shareConfirm.textContent = 'Share';
+      }
+    });
+
+    // Add Company Modal Logic
+    const addCompanyModal = document.getElementById('add-company-modal');
+    const addCompanyBtn = document.getElementById('open-add-company');
+    const addCompanyForm = document.getElementById('add-company-form');
+    const addCompanyNameInput = document.getElementById('new-company-name');
+    const addCompanyStatus = document.getElementById('add-company-status');
+    const addCompanyConfirm = document.getElementById('add-company-confirm');
+    const addCompanyCancel = document.getElementById('add-company-cancel');
+
+    addCompanyBtn.addEventListener('click', () => {
+      addCompanyStatus.style.display = 'none';
+      addCompanyNameInput.value = '';
+      addCompanyModal.classList.add('active');
+    });
+
+    addCompanyCancel.addEventListener('click', () => addCompanyModal.classList.remove('active'));
+    addCompanyModal.addEventListener('click', (e) => { if (e.target === addCompanyModal) addCompanyModal.classList.remove('active'); });
+
+    addCompanyForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      addCompanyStatus.style.display = 'none';
+      addCompanyConfirm.disabled = true;
+      addCompanyConfirm.textContent = 'Creating...';
+
+      try {
+        const response = await fetch('/api/v1/auth/companies', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+          },
+          body: JSON.stringify({ name: addCompanyNameInput.value })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          addCompanyStatus.textContent = 'Company created successfully!';
+          addCompanyStatus.className = 'share-status success';
+          addCompanyStatus.style.display = 'block';
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          addCompanyStatus.textContent = data.detail || 'Failed to create company';
+          addCompanyStatus.className = 'share-status error';
+          addCompanyStatus.style.display = 'block';
+        }
+      } catch (err) {
+        addCompanyStatus.textContent = 'An error occurred. Please try again.';
+        addCompanyStatus.className = 'share-status error';
+        addCompanyStatus.style.display = 'block';
+      } finally {
+        addCompanyConfirm.disabled = false;
+        addCompanyConfirm.textContent = 'Create Company';
       }
     });
   </script>

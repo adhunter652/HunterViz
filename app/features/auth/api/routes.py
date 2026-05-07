@@ -275,10 +275,6 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
     user_id = payload.get("sub")
     if not user_id:
         return RedirectResponse(url="/app/login", status_code=302)
-    from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
-    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
-    from app.features.subscriptions.infrastructure.subscription_store import JsonSubscriptionStore
-
     user_store = FirestoreUserStore()
     company_store = FirestoreCompanyStore()
     sub_store = JsonSubscriptionStore(config.subscription_store_path)
@@ -306,7 +302,7 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
     member_companies = company_store.list_by_member_email(user_email)
     for c in member_companies:
         owner_id = c.get("owner_id")
-        if owner_id == user_id: continue # Already handled
+        if owner_id == user_id: continue # Handled by owned_companies
         
         owner_doc = user_store.get_by_id(UserId(owner_id))
         if not owner_doc: continue
@@ -322,11 +318,8 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
                 d_copy["is_shared"] = True
                 all_dashboards.append(d_copy)
 
-    # 2. Companies for the filter dropdown & ownership info
+    # 2. Companies for the filter dropdown
     owned_companies = company_store.list_by_owner(user_id)
-    # Ensure every user has at least one company (if none found, we might need to create it, but register/login handles it now)
-    
-    return HTMLResponse(
         render_template(
             "auth",
             "dashboard",
@@ -346,6 +339,27 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
 class ShareDashboardBody(BaseModel):
     dashboard_id: str
     email: EmailStr
+
+
+class CreateCompanyBody(BaseModel):
+    name: str
+
+
+@router.post("/companies")
+async def create_company(
+    body: CreateCompanyBody,
+    user_id: UserId = Depends(get_current_user_id),
+):
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
+    store = FirestoreCompanyStore()
+    new_company = {
+        "name": body.name.strip(),
+        "owner_id": str(user_id),
+        "members": {},
+        "member_emails": []
+    }
+    store.save(new_company)
+    return {"ok": True, "company": new_company}
 
 
 class InviteMemberBody(BaseModel):
