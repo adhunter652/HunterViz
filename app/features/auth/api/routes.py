@@ -150,7 +150,7 @@ async def refresh_data(
 
         # Real call to the pipeline
         try:
-            yield json.dumps({"status": "triggering", "message": f"Triggering pipeline at {refresh_url}..."}) + "\n"
+            yield json.dumps({"status": "triggering", "message": "Triggering data pipeline..."}) + "\n"
             
             async with httpx.AsyncClient() as client:
                 # Use a long timeout for the pipeline call

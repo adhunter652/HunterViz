@@ -243,11 +243,11 @@
     /* Refresh Status Box */
     .refresh-status-box {
       display: none;
-      margin: 1rem 1.5rem -1rem 1.5rem;
-      padding: 1rem 1.25rem;
+      margin: 0;
+      padding: 0.75rem 1rem;
       background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 12px;
+      border-bottom: 1px solid #bfdbfe;
+      border-radius: 10px 10px 0 0;
       justify-content: space-between;
       align-items: center;
       animation: slideDown 0.3s ease-out;
@@ -299,16 +299,6 @@
     </div>
   </header>
   
-  <div id="refresh-status-box" class="refresh-status-box">
-    <div class="status-content">
-      <div class="status-spinner"></div>
-      <div class="status-text">
-        <div class="status-current" id="status-current">Initializing...</div>
-        <div class="status-notice" id="status-notice">This may take several minutes. You can safely navigate away.</div>
-      </div>
-    </div>
-    <button class="btn-status-close" id="btn-status-close">&times;</button>
-  </div>
   <main>
     <section class="dashboards-section">
       {% if dashboards %}
@@ -316,6 +306,16 @@
       <div class="dashboard-grid">
         {% for d in dashboards %}
         <div class="dashboard-card" data-dashboard-id="{{ d.id or '' }}">
+          <div class="refresh-status-box card-status-box">
+            <div class="status-content">
+              <div class="status-spinner"></div>
+              <div class="status-text">
+                <div class="status-current">Initializing...</div>
+                <div class="status-notice">This may take several minutes. You can safely navigate away.</div>
+              </div>
+            </div>
+          </div>
+          
           {% set embed_url = d.link.replace('/reporting/', '/embed/reporting/') if d.link and '/reporting/' in d.link and '/embed/' not in d.link else d.link %}
           <div class="card-preview">
             <iframe 
@@ -377,20 +377,37 @@
       window.location.href = '/';
     });
 
-    const refreshBtn = document.getElementById('refresh-data');
-    const statusBox = document.getElementById('refresh-status-box');
-    const statusCurrent = document.getElementById('status-current');
-    const statusClose = document.getElementById('btn-status-close');
+    const refreshBtnGlobal = document.getElementById('refresh-data');
     
-    statusClose.addEventListener('click', () => statusBox.classList.remove('active'));
+    async function handleRefresh(dashboardId = null, sourceBtn = null) {
+      // Find target card if dashboardId is provided
+      let targetCard = null;
+      if (dashboardId) {
+        targetCard = document.querySelector(`.dashboard-card[data-dashboard-id="${dashboardId}"]`);
+      } else if (sourceBtn) {
+        targetCard = sourceBtn.closest('.dashboard-card');
+      }
 
-    async function handleRefresh(dashboardId = null) {
-      if (refreshBtn.classList.contains('loading')) return;
+      // If global refresh and multiple cards, we might need to handle all. 
+      // For now, if no specific card, use a fallback or show on all.
+      const cards = targetCard ? [targetCard] : Array.from(document.querySelectorAll('.dashboard-card'));
       
-      refreshBtn.classList.add('loading');
-      refreshBtn.disabled = true;
-      statusBox.classList.add('active');
-      statusCurrent.textContent = "Starting data refresh...";
+      const refreshButtons = sourceBtn ? [sourceBtn] : (targetCard ? [targetCard.querySelector('.btn-card-refresh')] : [refreshBtnGlobal]);
+      
+      refreshButtons.forEach(btn => {
+        if (btn) {
+          btn.classList.add('loading');
+          btn.disabled = true;
+        }
+      });
+
+      cards.forEach(card => {
+        const box = card.querySelector('.refresh-status-box');
+        if (box) {
+          box.classList.add('active');
+          box.querySelector('.status-current').textContent = "Starting data refresh...";
+        }
+      });
       
       try {
         const response = await fetch('/api/v1/auth/refresh-data', {
@@ -415,14 +432,22 @@
             if (!line.trim()) continue;
             try {
               const data = JSON.parse(line);
-              statusCurrent.textContent = data.message;
+              cards.forEach(card => {
+                const statusCurr = card.querySelector('.status-current');
+                if (statusCurr) statusCurr.textContent = data.message;
+              });
               
               if (data.status === 'complete') {
                 setTimeout(() => window.location.reload(), 1500);
               } else if (data.status === 'error') {
-                statusBox.style.background = '#fee2e2';
-                statusBox.style.borderColor = '#fecaca';
-                statusCurrent.style.color = '#b91c1c';
+                cards.forEach(card => {
+                  const box = card.querySelector('.refresh-status-box');
+                  if (box) {
+                    box.style.background = '#fee2e2';
+                    box.style.borderColor = '#fecaca';
+                    box.querySelector('.status-current').style.color = '#b91c1c';
+                  }
+                });
               }
             } catch (e) {
               console.error('Error parsing stream chunk', e);
@@ -431,21 +456,31 @@
         }
       } catch (err) {
         console.error('Error refreshing data:', err);
-        statusCurrent.textContent = "Failed to refresh data. Please try again.";
-        statusBox.style.background = '#fee2e2';
-        statusCurrent.style.color = '#b91c1c';
+        cards.forEach(card => {
+          const statusCurr = card.querySelector('.status-current');
+          if (statusCurr) {
+            statusCurr.textContent = "Failed to refresh. Please try again.";
+            card.querySelector('.refresh-status-box').style.background = '#fee2e2';
+            statusCurr.style.color = '#b91c1c';
+          }
+        });
       } finally {
-        refreshBtn.classList.remove('loading');
-        refreshBtn.disabled = false;
+        refreshButtons.forEach(btn => {
+          if (btn) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+          }
+        });
       }
     }
 
-    refreshBtn.addEventListener('click', () => handleRefresh());
+    if (refreshBtnGlobal) {
+      refreshBtnGlobal.addEventListener('click', () => handleRefresh());
+    }
 
-    // Handle per-card refresh buttons
     document.querySelectorAll('.btn-card-refresh').forEach(btn => {
       btn.addEventListener('click', function() {
-        handleRefresh(btn.dataset.refreshTarget);
+        handleRefresh(btn.dataset.refreshTarget, btn);
       });
     });
 
