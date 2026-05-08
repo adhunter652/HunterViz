@@ -320,6 +320,8 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
 
     # 2. Companies for the filter dropdown
     owned_companies = company_store.list_by_owner(user_id)
+    
+    return HTMLResponse(
         render_template(
             "auth",
             "dashboard",
