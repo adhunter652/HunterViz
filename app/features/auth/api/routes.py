@@ -275,6 +275,10 @@ def user_landing(request: Request, config: Settings = Depends(get_config)):
     user_id = payload.get("sub")
     if not user_id:
         return RedirectResponse(url="/app/login", status_code=302)
+    from app.features.auth.infrastructure.firestore_user_store import FirestoreUserStore
+    from app.features.auth.infrastructure.firestore_company_store import FirestoreCompanyStore
+    from app.features.subscriptions.infrastructure.subscription_store import JsonSubscriptionStore
+
     user_store = FirestoreUserStore()
     company_store = FirestoreCompanyStore()
     sub_store = JsonSubscriptionStore(config.subscription_store_path)
