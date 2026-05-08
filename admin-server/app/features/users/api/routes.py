@@ -19,7 +19,7 @@ def get_company_store():
     return FirestoreCompanyStore()
 
 
-# --- Pages ---
+# --- Pages ----
 
 
 @router.get("", response_class=HTMLResponse)
